@@ -1,0 +1,21 @@
+# Joomla! Sicherheitskritisch
+configuration.php
+
+# Joomla! Temporäre Dateien
+cache/
+tmp/
+logs/
+
+# Joomla! Installation
+installation/
+
+# System
+.DS_Store
+Thumbs.db
+*.log
+
+# VS Code
+.vscode/
+
+# Node
+node_modules/
