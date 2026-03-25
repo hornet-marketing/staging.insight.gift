@@ -69,3 +69,4 @@ When making site changes, work in:
 
 Avoid modifying files under `libraries/` or core `includes/` — these are Joomla framework files that will be overwritten on updates.
 # Git Workflow Test
+# Test
