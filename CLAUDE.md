@@ -68,3 +68,4 @@ When making site changes, work in:
 - Custom component or module directories under `components/` / `modules/`
 
 Avoid modifying files under `libraries/` or core `includes/` — these are Joomla framework files that will be overwritten on updates.
+# Git Workflow Test
