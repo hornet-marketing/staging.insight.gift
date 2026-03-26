@@ -54,13 +54,20 @@ Extensions follow `Component → Controller → Model → View` structure:
 - Views render via layout files in `tmpl/` directories
 
 ### Database
-Table prefix is `jins_`. Core tables: `jins_content`, `jins_users`, `jins_menu`, `jins_extensions`, `jins_modules`. HikaShop uses `jins_hikashop_*` tables.
+Table prefix is `jins_`. Core tables: `jins_content`, `jins_users`, `jins_menu`, `jins_extensions`, `jins_modules`.
 
 ### URL Routing
 SEF URLs are enabled. `.htaccess` handles Apache rewrites to route all requests through `index.php`.
 
-## Customization Locations
+## Medien & Bilder
+- Alle Bilder liegen ausschließlich auf dem Server unter `/images/`
+- Sie sind NICHT im Git-Repository (in .gitignore ausgeschlossen)
+- Dateinamen abfragen via SSH:
+  `ssh ins-user1@staging.insight.gift "find /var/www/vhosts/insight.gift/httpdocs/staging/images/ -type f"`
+- Bilder werden NIE lokal bearbeitet oder committed
+- Bildpfade in Templates/CSS immer relativ zum Joomla-Root angeben
 
+## Customization Locations
 When making site changes, work in:
 - `templates/narioz/` — theme overrides, CSS, JS, template params
 - `templates/narioz/html/` — Joomla template overrides (copy core views here to override)
