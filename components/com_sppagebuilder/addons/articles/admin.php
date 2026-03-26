@@ -156,6 +156,68 @@ SpAddonsConfig::addonConfig([
             ],
         ],
 
+        'pagination' => [
+            'title' => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_PAGINATION_TITLE'),
+            'fields' => [
+                'pagination' => [
+                    'type'    => 'checkbox',
+                    'title'   => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_PAGINATION_TITLE'),
+                    'desc'    => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_PAGINATION_DESC'),
+                    'std'     => 0,
+                    'is_header' => 1
+                ],
+                'pagination_load_more_button_text' => [
+                    'type' => 'text',
+                    'title' => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_PAGINATION_LOAD_MORE_BUTTON_TEXT'),
+                    'desc' => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_PAGINATION_LOAD_MORE_BUTTON_TEXT_DESC'),
+                    'std' => 'Load More',
+                    'depends' => [['pagination', '=', 1]],
+                ],
+                'pagination_buttons_position' => [
+                    'type' => 'buttons',
+                    'title' => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_PAGINATION_BUTTONS_POSITION_TITLE'),
+                    'values' => [
+                        ['label' => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_PAGINATION_BUTTONS_POSITION_LEFT'), 'value' => 'start'],
+                        ['label' => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_PAGINATION_BUTTONS_POSITION_CENTER'), 'value' => 'center'],
+                        ['label' => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_PAGINATION_BUTTONS_POSITION_RIGHT'), 'value' => 'end'],
+                    ],
+                    'responsive' => true,
+                    'std' => 'start',
+                    'depends' => [['pagination', '=', 1]],
+                ],
+                'pagination_padding' => [
+                    'type' => 'padding',
+                    'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_PADDING'),
+                    'responsive' => true,
+                    'depends' => [['pagination', '=', 1]],
+                ],
+                'pagination_margin' => [
+                    'type' => 'margin',
+                    'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_MARGIN'),
+                    'responsive' => true,
+                    'depends' => [['pagination', '=', 1]],
+                ],
+                'pagination_load_more_button_type' => [
+                    'type'   => 'select',
+                    'title'  => Text::_('COM_SPPAGEBUILDER_PAGINATION_LOAD_MORE_BUTTON_TYPE'),
+                    'values' => [
+                        'default'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_DEFAULT'),
+                        'primary'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_PRIMARY'),
+                        'secondary' => Text::_('COM_SPPAGEBUILDER_GLOBAL_SECONDARY'),
+                        'success'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_SUCCESS'),
+                        'info'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_INFO'),
+                        'warning'   => Text::_('COM_SPPAGEBUILDER_GLOBAL_WARNING'),
+                        'danger'    => Text::_('COM_SPPAGEBUILDER_GLOBAL_DANGER'),
+                        'dark'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_DARK'),
+                        'link'      => Text::_('COM_SPPAGEBUILDER_GLOBAL_LINK'),
+                    ],
+                    'std'    => 'default',
+                    'depends' => [['pagination', '=', 1]],
+                ],
+            ],
+            'depends' => [['resource', '=', 'article']],
+        ],
+
         'item' => [
             'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_CONTAINER_ARTICLE'),
             'depends' => [['layout', '!=', 'default']],
@@ -675,7 +737,7 @@ SpAddonsConfig::addonConfig([
                     'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_BACKGROUND_COLOR'),
                     'std' => 'rgba(236, 67, 15, 0.1)',
                     'depends' => [
-                        ['show_category', '=', '1'],
+                        ['show_tags', '=', '1'],
                         ['tags_status', '=', 'normal'],
                     ],
                 ],

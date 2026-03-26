@@ -1,7 +1,7 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -73,7 +73,7 @@ class ControlpanelModel extends BaseDatabaseModel
 	 * @since   9.0.0
 	 * @throws  \Exception
 	 */
-	public function __construct($config = [], MVCFactoryInterface $factory = null)
+	public function __construct($config = [], ?MVCFactoryInterface $factory = null)
 	{
 		parent::__construct($config, $factory);
 
@@ -654,8 +654,9 @@ class ControlpanelModel extends BaseDatabaseModel
 		}
 
 		$response = $downloader->get($checkURL);
+		$body     = (string) $response->getBody();
 
-		if ($response->body === 'AKEEBA BACKUP WEB ACCESS CHECK')
+		if ($body === 'AKEEBA BACKUP WEB ACCESS CHECK')
 		{
 			$ret['readFile'] = true;
 		}

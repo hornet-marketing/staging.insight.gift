@@ -29,8 +29,11 @@ use JoomShaper\SPPageBuilder\DynamicContent\Models\Page;
 use JoomShaper\SPPageBuilder\DynamicContent\Supports\Arr;
 use JoomShaper\SPPageBuilder\DynamicContent\Supports\Str;
 
+require_once __DIR__ . '/traits/PageVersionsTrait.php';
+
 class SppagebuilderControllerPage extends FormController
 {
+	use PageVersionsTrait;
 
 	public function __construct($config = array())
 	{
@@ -829,7 +832,7 @@ class SppagebuilderControllerPage extends FormController
 			die();
 		}
 
-		$apiURL = 'https://www.joomshaper.com/index.php?option=com_layouts&task=' . $type . '.download&support=4beyond&id=' . $id . '&email=' . $email . '&api_key=' . $apiKey;
+		$apiURL = 'https://www.joomshaper.com/index.php?option=com_layouts&task=' . $type . '.download&support=4beyond&id=' . $id . '&email=' . urlencode($email) . '&api_key=' . $apiKey;
 		$pageResponse = $http->get($apiURL);
 		$pageData = $pageResponse->body;
 
@@ -904,6 +907,10 @@ class SppagebuilderControllerPage extends FormController
 		$input = Factory::getApplication()->input;
 		$id = $input->getInt('id', 0);
 		$data = $input->json->get('data', [], 'ARRAY');
+
+		// Get version_name and version_note from request if provided
+		$versionName = $input->json->getString('version_name', '');
+		$versionNote = $input->json->getString('version_note', '');
 
 		$response = [
 			'status' => false,
@@ -1005,6 +1012,10 @@ class SppagebuilderControllerPage extends FormController
 				echo json_encode($response);
 				die();
 			}
+
+			// Create version snapshot after successful save
+			// Use custom name and note if provided
+			$this->createVersionSnapshot($id, !empty($versionName) ? $versionName : null, !empty($versionNote) ? $versionNote : null);
 
 			$pageModel->checkin($id);
 
@@ -1242,4 +1253,177 @@ class SppagebuilderControllerPage extends FormController
 		echo \json_encode($result);
 		die;
 	}
+
+	/**
+	 * Create a version snapshot of the current page
+	 *
+	 * @param   int     $pageId      The page ID
+	 * @param   string  $customName  Optional custom name for the version
+	 * @param   string  $customNote  Optional custom note for the version
+	 *
+	 * @return  void
+	 * @since   6.2.4
+	 */
+	private function createVersionSnapshot($pageId, $customName = null, $customNote = null)
+	{
+		try
+		{
+			// Get current page data after saving
+			$db = Factory::getDbo();
+			$query = $db->getQuery(true);
+			$query->select([
+				$db->quoteName('content'),
+				$db->quoteName('css'),
+				$db->quoteName('attribs'),
+				$db->quoteName('og_title'),
+				$db->quoteName('og_image'),
+				$db->quoteName('og_description')
+			])
+			->from($db->quoteName('#__sppagebuilder'))
+			->where($db->quoteName('id') . ' = ' . (int) $pageId);
+
+			$db->setQuery($query);
+			$pageData = $db->loadObject();
+
+			if (!$pageData)
+			{
+				return; // Page doesn't exist, skip version creation
+			}
+
+			// If a custom note is provided, always create a snapshot (manual note addition)
+			// Otherwise, compare with the last active version to see if settings changed
+			if (empty($customNote))
+			{
+				// Get the last active version to compare
+				$versionQuery = $db->getQuery(true);
+				$versionQuery->select([
+					$db->quoteName('content'),
+					$db->quoteName('css'),
+					$db->quoteName('attribs'),
+					$db->quoteName('og_title'),
+					$db->quoteName('og_image'),
+					$db->quoteName('og_description')
+				])
+				->from($db->quoteName('#__sppagebuilder_versions'))
+				->where($db->quoteName('page_id') . ' = ' . (int) $pageId)
+				->where($db->quoteName('active') . ' = 1')
+				->order($db->quoteName('created_on') . ' DESC')
+				->setLimit(1);
+
+				$db->setQuery($versionQuery);
+				$activeVersion = $db->loadObject();
+
+				// If there's an active version, compare settings
+				if ($activeVersion)
+				{
+					$hasChanges = false;
+
+					// Normalize and compare content
+					$currentContent = $pageData->content ?? '';
+					$activeContent = $activeVersion->content ?? '';
+					if ($currentContent !== $activeContent)
+					{
+						$hasChanges = true;
+					}
+
+					// Compare CSS
+					if (!$hasChanges)
+					{
+						$currentCss = $pageData->css ?? '';
+						$activeCss = $activeVersion->css ?? '';
+						if ($currentCss !== $activeCss)
+						{
+							$hasChanges = true;
+						}
+					}
+
+					// Compare attribs
+					if (!$hasChanges)
+					{
+						$currentAttribs = $pageData->attribs ?? '[]';
+						$activeAttribs = $activeVersion->attribs ?? '[]';
+						if ($currentAttribs !== $activeAttribs)
+						{
+							$hasChanges = true;
+						}
+					}
+
+					// Compare OG fields
+					if (!$hasChanges)
+					{
+						$currentOgTitle = $pageData->og_title ?? '';
+						$activeOgTitle = $activeVersion->og_title ?? '';
+						$currentOgImage = $pageData->og_image ?? '';
+						$activeOgImage = $activeVersion->og_image ?? '';
+						$currentOgDescription = $pageData->og_description ?? '';
+						$activeOgDescription = $activeVersion->og_description ?? '';
+
+						if ($currentOgTitle !== $activeOgTitle || 
+							$currentOgImage !== $activeOgImage || 
+							$currentOgDescription !== $activeOgDescription)
+						{
+							$hasChanges = true;
+						}
+					}
+
+					// If no changes detected, skip version creation
+					if (!$hasChanges)
+					{
+						return;
+					}
+				}
+			}
+
+			// Use custom name if provided, otherwise format date/time for version name: "Feb 13, 2026, 7:06:30 AM"
+			if (!empty($customName))
+			{
+				$versionName = $customName;
+			}
+			else
+			{
+				$date = Factory::getDate();
+				$versionName = $date->format('M j, Y, g:i:s A', true);
+			}
+
+			// Set all other versions of this page to inactive
+			$updateQuery = $db->getQuery(true);
+			$updateQuery->update($db->quoteName('#__sppagebuilder_versions'))
+				->set($db->quoteName('active') . ' = 0')
+				->where($db->quoteName('page_id') . ' = ' . (int) $pageId);
+			$db->setQuery($updateQuery);
+			$db->execute();
+
+			Table::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_sppagebuilder/tables');
+			$versionTable = Table::getInstance('Version', 'SppagebuilderTable');
+
+			$versionData = [
+				'page_id' => $pageId,
+				'name' => $versionName,
+				'content' => $pageData->content ?? '',
+				'css' => $pageData->css ?? '',
+				'attribs' => $pageData->attribs ?? '[]',
+				'og_title' => $pageData->og_title ?? '',
+				'og_image' => $pageData->og_image ?? '',
+				'og_description' => $pageData->og_description ?? '',
+				'active' => 1,
+				'created_on' => Factory::getDate()->toSql(),
+				'created_by' => Factory::getUser()->get('id'),
+			];
+
+			// Add custom note if provided
+			if (!empty($customNote))
+			{
+				$versionData['note'] = $customNote;
+			}
+
+			$versionTable->bind($versionData);
+			$versionTable->store();
+		}
+		catch (Exception $e)
+		{
+			// Silently fail - versioning is not critical for saving
+			// Log error if needed
+		}
+	}
+
 }

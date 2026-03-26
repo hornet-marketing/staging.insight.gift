@@ -1,7 +1,7 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2024 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -17,8 +17,7 @@ use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
 use Joomla\Event\DispatcherInterface;
 
-return new class implements ServiceProviderInterface
-{
+return new class implements ServiceProviderInterface {
 	/**
 	 * Registers the service provider with a DI container.
 	 *
@@ -34,16 +33,17 @@ return new class implements ServiceProviderInterface
 
 		$container->set(
 			PluginInterface::class,
-			function (Container $container)
-			{
-				$config = (array) PluginHelper::getPlugin('quickicon', 'akeebabackup');
+			function (Container $container) {
+				$config     = (array) PluginHelper::getPlugin('quickicon', 'akeebabackup');
+				$dispatcher = $container->get(DispatcherInterface::class);
 
-				$plugin = new AkeebaBackup(
-					$container->get(DispatcherInterface::class),
-					Factory::getApplication()->getDocument(),
-					$config
-				);
+				$plugin = version_compare(JVERSION, '5.4.0', 'ge')
+					? new AkeebaBackup($config)
+					: new AkeebaBackup(
+						$dispatcher, $config
+					);
 
+				$plugin->setDocument(Factory::getApplication()->getDocument());
 				$plugin->setMVCFactory($container->get(MVCFactoryInterface::class));
 				$plugin->setApplication(Factory::getApplication());
 				$plugin->setDatabase($container->get(\Joomla\Database\DatabaseInterface::class));

@@ -1,7 +1,7 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -37,7 +37,7 @@ class PushModel extends BaseDatabaseModel
 {
 	use WebPushModelTrait;
 
-	public function __construct($config = [], MVCFactoryInterface $factory = null)
+	public function __construct($config = [], ?MVCFactoryInterface $factory = null)
 	{
 		parent::__construct($config, $factory);
 

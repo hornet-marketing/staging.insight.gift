@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--~
   ~ @package   akeebabackup
-  ~ @copyright Copyright (c)2006-2024 Nicholas K. Dionysopoulos / Akeeba Ltd
+  ~ @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
   ~ @license   GNU General Public License version 3, or later
   -->
 
 <extension type="plugin" group="quickicon" method="upgrade">
 	<name>PLG_QUICKICON_AKEEBABACKUP</name>
-	<version>10.0.6</version>
-	<creationDate>2025-09-01</creationDate>
+	<version>10.3.2</version>
+	<creationDate>2026-03-06</creationDate>
 	<author>Nicholas K. Dionysopoulos</author>
 	<authorEmail>nicholas@dionysopoulos.me</authorEmail>
 	<authorUrl>https://www.akeeba.com</authorUrl>

@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit9f54c6675a9d99c236cc55e18c8a0d7a
+class ComposerStaticInit7e7ffb6f1a9e828ca7ae967d28b893af
 {
     public static $files = array (
         '714ccd4b330431237faf946f71c4c9a4' => __DIR__ . '/..' . '/akeeba/s3/src/aliasing.php',
@@ -74,10 +74,10 @@ class ComposerStaticInit9f54c6675a9d99c236cc55e18c8a0d7a
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit9f54c6675a9d99c236cc55e18c8a0d7a::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit9f54c6675a9d99c236cc55e18c8a0d7a::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit9f54c6675a9d99c236cc55e18c8a0d7a::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit9f54c6675a9d99c236cc55e18c8a0d7a::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit7e7ffb6f1a9e828ca7ae967d28b893af::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit7e7ffb6f1a9e828ca7ae967d28b893af::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit7e7ffb6f1a9e828ca7ae967d28b893af::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit7e7ffb6f1a9e828ca7ae967d28b893af::$classMap;
 
         }, null, ClassLoader::class);
     }

@@ -1,7 +1,7 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -97,7 +97,11 @@ class ComponentParameters
 		{
 			$refClass = new ReflectionClass(ComponentHelper::class);
 			$refProp  = $refClass->getProperty('components');
-			$refProp->setAccessible(true);
+
+			if (version_compare(PHP_VERSION, '8.1.0', 'lt'))
+			{
+				$refProp->setAccessible(true);
+			}
 
 			if (version_compare(PHP_VERSION, '8.3.0', 'ge'))
 			{
@@ -124,7 +128,10 @@ class ComponentParameters
 			$refClass = new ReflectionClass(PluginHelper::class);
 			$refProp  = $refClass->getProperty('plugins');
 
-			$refProp->setAccessible(true);
+			if (version_compare(PHP_VERSION, '8.1.0', 'lt'))
+			{
+				$refProp->setAccessible(true);
+			}
 
 			if (version_compare(PHP_VERSION, '8.3.0', 'ge'))
 			{

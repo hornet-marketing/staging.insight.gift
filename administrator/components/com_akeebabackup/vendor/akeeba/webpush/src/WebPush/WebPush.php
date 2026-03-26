@@ -4,7 +4,7 @@
  *
  * An abstraction layer for easier implementation of WebPush in Joomla components.
  *
- * @copyright Copyright (c) 2022-2025 Akeeba Ltd
+ * @copyright Copyright (c) 2022-2026 Akeeba Ltd
  * @license   GNU GPL v3 or later; see LICENSE.txt
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,6 +29,7 @@ use Akeeba\WebPush\Base64Url\Base64Url;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Http\Http as HttpClient;
 use Joomla\Http\HttpFactory;
+use Joomla\Http\Response;
 use Laminas\Diactoros\Request;
 use Laminas\Diactoros\StreamFactory;
 use function count;
@@ -156,7 +157,7 @@ class WebPush
 	 * @param   null|int  $batchSize  Defaults the value defined in defaultOptions during instantiation (which defaults
 	 *                                to 1000).
 	 *
-	 * @return \Generator|MessageSentReport[]
+	 * @return \Generator|array<MessageSentReport|null>
 	 * @throws \ErrorException
 	 */
 	public function flush(?int $batchSize = null): \Generator
@@ -213,6 +214,7 @@ class WebPush
 						case 'get':
 						case 'trace':
 						default:
+							/** @var Response $response */
 							$response = $this->client->{$httpMethod}(new Uri($request->getUri()), $headers, $timeout);
 							break;
 
@@ -220,6 +222,7 @@ class WebPush
 						case 'put':
 						case 'delete':
 						case 'patch':
+							/** @var Response $response */
 							$response = $this->client->{$httpMethod}(
 								new Uri($request->getUri()), $request->getBody()->getContents(), $headers, $timeout
 							);
@@ -227,13 +230,23 @@ class WebPush
 					}
 
 					$success = $response->getStatusCode() >= 200 && $response->getStatusCode() < 400;
-					$reason  = $success ? 'OK' : (strip_tags($response->body) ?: $response->getReasonPhrase());
+
+					if ($success)
+					{
+						$reason = 'OK';
+					}
+					else
+					{
+						$body   = $response->getBody();
+						$body   = $body ? (string) $body : null;
+						$reason = strip_tags($body ?? '') ?: $response->getReasonPhrase();
+					}
 
 					yield new MessageSentReport($request, $response, $success, $reason);
 				}
 				catch (\Exception $e)
 				{
-					yield new MessageSentReport($request, $response, false, $e->getMessage());
+					yield null;
 				}
 			}
 		}
@@ -381,7 +394,7 @@ class WebPush
 	 */
 	public function sendOneNotification(
 		SubscriptionInterface $subscription, ?string $payload = null, array $options = [], array $auth = []
-	): MessageSentReport
+	): ?MessageSentReport
 	{
 		$this->queueNotification($subscription, $payload, $options, $auth);
 

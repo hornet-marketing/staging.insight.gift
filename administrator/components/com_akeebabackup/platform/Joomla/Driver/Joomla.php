@@ -1,7 +1,7 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -64,7 +64,7 @@ class Joomla
 		/**
 		 * We should not, in fact, try to close the connection by calling the parent method.
 		 *
-		 * If you close the connection we ask PHP's mysql / mysqli / pdomysql driver to disconnect the MySQL connection
+		 * If you close the connection, we ask PHP's mysql / mysqli / pdomysql driver to disconnect the MySQL connection
 		 * resource from the database server inside our instance of Akeeba Engine's database driver. However, this
 		 * identical resource is also present in Joomla's database driver. Joomla will also try to close the connection
 		 * to a now invalid resource, causing a PHP notice to be recorded.
@@ -196,6 +196,10 @@ class Joomla
 		{
 			return 'mysqli';
 		}
+		elseif ($jDriverName === 'pgsql' || $jDriverName === 'postgresql')
+		{
+			return 'postgresql';
+		}
 		elseif (
 			(stristr($jDriverName, 'postgre') !== false)
 			|| (stristr($jDriverName, 'pgsql') !== false)
@@ -230,9 +234,12 @@ class Joomla
 		{
 			return 'mysqli';
 		}
+		elseif (class_exists(PgsqlDriver::class) && ($db instanceof PgsqlDriver))
+		{
+			return 'postgresql';
+		}
 		elseif (
-			(class_exists(PgsqlDriver::class) && ($db instanceof PgsqlDriver))
-			|| (class_exists(SqliteDriver::class) && ($db instanceof SqliteDriver))
+			(class_exists(SqliteDriver::class) && ($db instanceof SqliteDriver))
 			|| (class_exists(SqlsrvDriver::class) && ($db instanceof SqlsrvDriver))
 			|| (class_exists(SqlazureDriver::class) && ($db instanceof SqlazureDriver))
 		)
@@ -252,7 +259,12 @@ class Joomla
 		if ((class_exists(PdoDriver::class) && ($db instanceof PdoDriver)) && $refDriver->hasProperty('options'))
 		{
 			$refOptions = $refDriver->getProperty('options');
-			$refOptions->setAccessible(true);
+
+			if (version_compare(PHP_VERSION, '8.1.0', 'lt'))
+			{
+				$refOptions->setAccessible(true);
+			}
+
 			$options = $refOptions->getValue($db);
 			$options = is_array($options) ? $options : [];
 
@@ -263,6 +275,11 @@ class Joomla
 				// PDO MySQL. We support this!
 				case 'mysql':
 					return 'pdomysql';
+
+				// PDO PostgreSQL. We support this!
+				case 'pgsql':
+				case 'postgresql':
+					return 'postgresql';
 
 				// ODBC: I need to inspect the DSN
 				case 'obdc':
@@ -280,6 +297,12 @@ class Joomla
 						return 'pdomysql';
 					}
 
+					// That's MySQL over ODBC over PDO. OK, rather strained but we can do that.
+					if (stripos($dsn, 'pgsql:') === 0 || stripos($dsn, 'postgresql:') === 0)
+					{
+						return 'postgresql';
+					}
+
 					// Anything else: tough luck.
 					return null;
 
@@ -289,26 +312,45 @@ class Joomla
 			}
 		}
 
-		// Let's get the class hierarchy and see if we have anything that looks like MySQL in its name.
+		// Let's get the class hierarchy and see if we have anything that looks like MySQL / PostgreSQL in its name.
 		$classNames = class_parents($db);
 		array_unshift($classNames, get_class($db));
 
-		$isMySQLi = array_reduce($classNames, function (bool $carry, string $className) {
+		$isMySQLi = array_reduce(
+			$classNames, function (bool $carry, string $className) {
 			return $carry || (stripos($className, 'mysqli') !== false);
-		}, false);
+		}, false
+		);
 
 		if ($isMySQLi)
 		{
 			return 'mysqli';
 		}
 
-		$isPdoMySQL = array_reduce($classNames, function (bool $carry, string $className) {
+		$isPdoMySQL = array_reduce(
+			$classNames, function (bool $carry, string $className) {
 			return $carry || (stripos($className, 'pdomysql') !== false);
-		}, false);
+		}, false
+		);
 
 		if ($isPdoMySQL)
 		{
 			return 'pdomysql';
+		}
+
+		$isPdoPostgreSQL = array_reduce(
+			$classNames,
+			function (bool $carry, string $className) {
+				return $carry
+				       || (stripos($className, 'postgresql') !== false)
+				       || (stripos($className, 'pgsql') !== false);
+			},
+			false
+		);
+
+		if ($isPdoPostgreSQL)
+		{
+			return 'postgresql';
 		}
 
 		// All possible checks failed. I have no idea what you're doing here, mate.

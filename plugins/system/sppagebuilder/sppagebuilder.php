@@ -259,7 +259,10 @@ class  plgSystemSppagebuilder extends CMSPlugin
 				if (!$params->get('disablecss', 0))
 				{
 					SppagebuilderHelperSite::addStylesheet('sppagebuilder.css');
-					SppagebuilderHelperSite::addStylesheet('animate.min.css');
+					if (!$params->get('disableanimatecss', 0))
+					{
+						SppagebuilderHelperSite::addStylesheet('animate.min.css');
+					}
 					SppagebuilderHelperSite::addContainerMaxWidth();
 				}
 
@@ -527,8 +530,12 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 		if (!empty($popupAttribs['background_type']) && !empty($popupAttribs['bg_media']) && $popupAttribs['background_type'] === 'image')
 		{
+			$bgImageSrc = $popupAttribs['bg_media']['src'];
+			if (!preg_match('#^(https?://|//)#', $bgImageSrc) && substr($bgImageSrc, 0, 1) !== '/') {
+				$bgImageSrc = Uri::root(true) . '/' . ltrim($bgImageSrc, '/');
+			}
 			$cssOutput .= ' .page-' . $popupId . '.sp-pagebuilder-popup .builder-container {
-				background-image: url("' . $popupAttribs['bg_media']['src'] . '");
+				background-image: url("' . $bgImageSrc . '");
 				background-repeat: ' . (!empty($popupAttribs['bg_media_repeat']) ? $popupAttribs['bg_media_repeat'] : 'no-repeat') . ';
 				background-attachment: ' . (!empty($popupAttribs['bg_media_attachment']) ? $popupAttribs['bg_media_attachment'] : 'initial') . ';
 				background-position: ' . (!empty($popupAttribs['bg_media_position']) ? $popupAttribs['bg_media_position'] : 'initial') . ';
@@ -592,8 +599,12 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 			if (!empty($popupAttribs['overlay']) && !empty($popupAttribs['overlay_bg_media']) && !empty($popupAttribs['overlay_background_type']) && $popupAttribs['overlay_background_type'] === 'image')
 			{
+				$overlayBgImageSrc = $popupAttribs['overlay_bg_media']['src'];
+				if (!preg_match('#^(https?://|//)#', $overlayBgImageSrc) && substr($overlayBgImageSrc, 0, 1) !== '/') {
+					$overlayBgImageSrc = Uri::root(true) . '/' . ltrim($overlayBgImageSrc, '/');
+				}
 				$cssOutput .= ' #sp-pagebuilder-overlay-' . $popupId . ' {
-					background-image: url("' . $popupAttribs['overlay_bg_media']['src'] . '");
+					background-image: url("' . $overlayBgImageSrc . '");
 					background-repeat: ' . (!empty($popupAttribs['overlay_bg_media_repeat']) ? $popupAttribs['overlay_bg_media_repeat'] : 'no-repeat') . ';
 					background-attachment: ' . (!empty($popupAttribs['overlay_bg_media_attachment']) ? $popupAttribs['overlay_bg_media_attachment'] : 'initial') . ';
 					background-position: ' . (!empty($popupAttribs['overlay_bg_media_position']) ? $popupAttribs['overlay_bg_media_position'] : 'initial') . ';
@@ -1110,10 +1121,16 @@ class  plgSystemSppagebuilder extends CMSPlugin
 				let isShown = false;
 
 				if (clickType === "random") {
-					document.addEventListener("click", () => {
+					document.addEventListener("click", (event) => {
 						if (isRestricted(' . $popupId . ')) return; 
 						if (!isPermitted(' . $popupId . ')) return;
 						if (!isWithinDateRange(' . $popupId . ')) return;
+
+						let closePopupArea = "#sp-pagebuilder-popup-close-btn-' . $popupId . '";
+						let targetNode = event.target;
+						if (targetNode.closest(closePopupArea)) {
+							return;
+						}
 
 						clicked++;
 						if (clicked >= clickCount) {
@@ -1482,6 +1499,10 @@ class  plgSystemSppagebuilder extends CMSPlugin
 			$popupId = $popup->id;
 			$body = $app->getBody();
 
+			if (!$this->isPopupAccessLevelPermitted($popup->access)) {
+				continue;
+			}
+
 			$popupAttribs = !empty($popup->attribs) && is_string($popup->attribs) ? json_decode($popup->attribs, true) : [];
 			$scriptContent = $this->getScriptContent($popupId, $popupAttribs);
 			$cssOutput = $this->getCssOutput($popupAttribs, $popupId);
@@ -1494,9 +1515,17 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 			$advancedScriptContent = $this->getAdvancedScriptContent($popupId, $popupAttribs);
 
+			$responsive_class = '';
+
+			$responsive_class .= (isset($popupAttribs['hidden_xl']) && filter_var($popupAttribs['hidden_xl'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-xl ' : '';
+			$responsive_class .= (isset($popupAttribs['hidden_lg']) && filter_var($popupAttribs['hidden_lg'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-lg ' : '';
+			$responsive_class .= (isset($popupAttribs['hidden_md']) && filter_var($popupAttribs['hidden_md'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-md ' : '';
+			$responsive_class .= (isset($popupAttribs['hidden_sm']) && filter_var($popupAttribs['hidden_sm'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-sm ' : '';
+			$responsive_class .= (isset($popupAttribs['hidden_xs']) && filter_var($popupAttribs['hidden_xs'], FILTER_VALIDATE_BOOLEAN)) ? ' sppb-hidden-xs ' : '';
+
 			$popupDiv = '
-			<div id="sp-pagebuilder-overlay-'. $popupId . '" style="position: fixed; inset: 0; z-index: 9999;"></div>
-			<div class="sp-page-builder  page-' . $popupId . '  sp-pagebuilder-popup">
+			<div class="' .$responsive_class. '" id="sp-pagebuilder-overlay-'. $popupId . '" style="position: fixed; inset: 0; z-index: 9999;"></div>
+			<div class="sp-page-builder  page-' . $popupId . '  sp-pagebuilder-popup '. $responsive_class .'">
 				<div class="sp-pagebuilder-container-popup">
 					<div class=" page-content builder-container">' . $popupContent . '</div>
 				</div>
@@ -1509,6 +1538,30 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 			$app->setBody($body . $popupDiv);
 		}
+	}
+
+	/**
+	 * Checks if the current user has permission to access the popup based on its access level.
+	 * 
+	 * This method retrieves the current user's authorized view levels and checks if the
+	 * popup's access level is included in that list. If it is, the user is permitted to
+	 * view the popup; otherwise, they are not.
+	 * 
+	 * @param int $popupAccessLevel The access level of the popup.
+	 * 
+	 * @return bool True if the user is permitted to view the popup, false otherwise.
+	 */
+	private function isPopupAccessLevelPermitted($popupAccessLevel)
+	{
+		$user = Factory::getUser();
+		$userAccessLevels = $user->getAuthorisedViewLevels();
+
+		if (in_array($popupAccessLevel, $userAccessLevels))
+		{
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -1569,6 +1622,27 @@ class  plgSystemSppagebuilder extends CMSPlugin
 		catch (RuntimeException $e) {
 
 			$app->enqueueMessage($e->getMessage(), 'error');
+		}
+	}
+
+
+	function isShaperHelixUltimate()
+	{
+		/** @var CMSApplication $app */
+		$doc = new DOMDocument();
+		libxml_use_internal_errors(true);	
+		try {
+			/** @var CMSApplication $app */
+			$app = Factory::getApplication();
+			$body = $app->getBody();
+			$doc->loadHTML($body);
+			libxml_clear_errors();
+			$xpath = new DOMXPath($doc);
+			/** @var DOMElement $bodyNode */
+			$bodyNode = $xpath->query('//body')->item(0);
+			return $bodyNode ? strpos($bodyNode->getAttribute('class'), 'helix-ultimate') !== false : false;
+		} catch (Exception $e) {
+			return false;
 		}
 	}
 
@@ -1696,21 +1770,28 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 				if ($this->articleDetailsPageContent) {
 					$xpath = new DOMXPath($doc);
-					foreach ($xpath->query('//main') as $node) {
-						while ($node->firstChild) {
-							$node->removeChild($node->firstChild);
+					if (!empty($xpath->query('//main')) && $xpath->query('//main')->length > 0) {
+						$querySelector = "//main";
+						if ($this->isShaperHelixUltimate()) {
+							$querySelector = "//*[@id='sp-main-body']";
 						}
-						$div = $this->divWithHtml($doc, $this->articleDetailsPageContent);
-						$div->setAttribute('class', 'page-content');
-						$divWrapper = $doc->createElement('div');
-						$divWrapper->setAttribute('id', 'sp-page-builder');
-						$divWrapper->setAttribute('class', 'sp-page-builder');
-						$divWrapper->appendChild($div);
-						$node->appendChild($divWrapper);
+
+						foreach ($xpath->query($querySelector) as $node) {
+							while ($node->firstChild) {
+								$node->removeChild($node->firstChild);
+							}
+							$div = $this->divWithHtml($doc, $this->articleDetailsPageContent);
+							$div->setAttribute('class', 'page-content');
+							$divWrapper = $doc->createElement('div');
+							$divWrapper->setAttribute('id', 'sp-page-builder');
+							$divWrapper->setAttribute('class', 'sp-page-builder');
+							$divWrapper->appendChild($div);
+							$node->appendChild($divWrapper);
+						}
+						
+						$out = $doc->saveHTML();
+						$app->setBody($out);
 					}
-					
-					$out = $doc->saveHTML();
-					$app->setBody($out);	
 				}
 			} else if ($option === 'com_content' && ($view === 'category' || $view === 'featured' || $view === 'archive')) {
 				$body = $app->getBody();
@@ -1721,21 +1802,28 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 				if ($this->articleIndexPageContent) {
 					$xpath = new DOMXPath($doc);
-					foreach ($xpath->query('//main') as $node) {
-						while ($node->firstChild) {
-							$node->removeChild($node->firstChild);
+					if (!empty($xpath->query('//main')) && $xpath->query('//main')->length > 0) {
+						$querySelector = "//main";
+						if ($this->isShaperHelixUltimate()) {
+							$querySelector = "//*[@id='sp-main-body']";
 						}
-						$div = $this->divWithHtml($doc, $this->articleIndexPageContent);
-						$div->setAttribute('class', 'page-content');
-						$divWrapper = $doc->createElement('div');
-						$divWrapper->setAttribute('id', 'sp-page-builder');
-						$divWrapper->setAttribute('class', 'sp-page-builder');
-						$divWrapper->appendChild($div);
-						$node->appendChild($divWrapper);
+
+						foreach ($xpath->query($querySelector) as $node) {
+							while ($node->firstChild) {
+								$node->removeChild($node->firstChild);
+							}
+							$div = $this->divWithHtml($doc, $this->articleIndexPageContent);
+							$div->setAttribute('class', 'page-content');
+							$divWrapper = $doc->createElement('div');
+							$divWrapper->setAttribute('id', 'sp-page-builder');
+							$divWrapper->setAttribute('class', 'sp-page-builder');
+							$divWrapper->appendChild($div);
+							$node->appendChild($divWrapper);
+						}
+		
+						$out = $doc->saveHTML();
+						$app->setBody($out);
 					}
-	
-					$out = $doc->saveHTML();
-					$app->setBody($out);
 				}
 			}
 		}
@@ -1935,9 +2023,35 @@ class  plgSystemSppagebuilder extends CMSPlugin
 		$app = Factory::getApplication();
 		$input = $app->input;
 		$id = $input->get('id', 0, 'INT');
+
+		$params = ComponentHelper::getParams('com_sppagebuilder');
+		$showArticleDetailsPageAsDefault = $params->get('show_article_details_page_as_default', 0);
 		
 		if (empty($id)) {
 			return;
+		}
+
+		if (!$showArticleDetailsPageAsDefault) {
+			$db = Factory::getDbo();
+			$query = $db->getQuery(true);
+			$query->select(['id, content'])
+				->from($db->quoteName('#__sppagebuilder'))
+				->where($db->quoteName('extension_view') . ' = ' . $db->quote('article'))
+				->where($db->quoteName('view_id') . ' = ' . $db->quote($id))
+				->where($db->quoteName('active') . ' = ' . $db->quote('1'))
+				->where($db->quoteName('published') . ' = 1');
+			$db->setQuery($query);
+
+			$result = $db->loadObject();
+
+			if (!empty($result->content)) {
+				$articleContent = json_decode($result->content);
+
+				if (!empty($articleContent)) {
+					return null;
+				}
+
+			}
 		}
 		
 		$detailsPage = $this->getArticleDetailsPage($id);
@@ -2105,11 +2219,39 @@ class  plgSystemSppagebuilder extends CMSPlugin
 			}
 		}
 
+		$isEnabledColoSwitcher = $params->get('show_color_switcher', 0);
+
+		if ($app->isClient('site')) {
+            $cookie = $app->input->cookie->get('sppb_user_timezone', null, 'STRING');
+
+			if(!$cookie){
+				$timeZoneCookie = <<<JS
+				(function () {
+					try {
+						var SPPB_TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+						if (!SPPB_TIME_ZONE){
+							return;
+						}
+
+						document.cookie =
+							'sppb_user_timezone=' + encodeURIComponent(SPPB_TIME_ZONE) +
+							'; path=/' +
+							'; max-age=43200'; // 12 hours
+					} catch (e) {}
+				})();
+				JS;
+
+				$doc->addScriptDeclaration($timeZoneCookie);
+			}
+        }
+		
 		$doc->addScriptDeclaration('
 			const initColorMode = () => {
 				const colorVariableData = [];
 				const sppbColorVariablePrefix = "--sppb";
 				let activeColorMode = localStorage.getItem("sppbActiveColorMode") || "' . $defaultColorMode . '";
+				' . (!$isEnabledColoSwitcher ? ('activeColorMode = "' . $defaultColorMode . '"') : '') . ';
 				const modes = ' . json_encode($modes) . ';
 
 				if(!modes?.includes(activeColorMode)) {
@@ -2147,6 +2289,8 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 			document.addEventListener("DOMContentLoaded", initColorMode);
 		');
+		
+
 
 		if($app->isClient('site') && $view !== 'form')
 		{
@@ -2388,6 +2532,17 @@ class  plgSystemSppagebuilder extends CMSPlugin
 			{
 				$moduleId = array_pop(explode('.', $module->name));
 				$moduleContent = $this->moduleData->content ?? $this->moduleData->text ?? '[]';
+				$moduleContentParsed = json_decode($moduleContent);
+
+				foreach($moduleContentParsed as $section)
+				{
+					if(isset($section->id) && !empty($section->id))
+					{
+						$section->id = $this->uuid();
+					}
+				}
+
+				$moduleContent = json_encode($moduleContentParsed);
 				$user = Factory::getUser();
 				$dateTime = Factory::getDate()->toSql();
 
@@ -2418,6 +2573,18 @@ class  plgSystemSppagebuilder extends CMSPlugin
 
 	}
 
+	private function uuid()
+    {
+        return sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000, // Version 4 UUID
+            mt_rand(0, 0x3fff) | 0x8000, // Variant
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
+    }
+
 	public function onPreprocessMenuItems($context, &$items)
 	{
 		if (version_compare(JVERSION, '4.0.0', '<')) {
@@ -2441,9 +2608,11 @@ class  plgSystemSppagebuilder extends CMSPlugin
 		
 		$isMenuItemAlreadyAdded = true;
 
+		self::loadPageBuilderLanguage();
+
 		$newItem = new AdministratorMenuItem([
 			'id'     => 'custom-reports',
-			'title'  => 'Comments',
+			'title'  => Text::_('COM_SPPAGEBUILDER_COMMENT_TITLE'),
 			'link'   => 'index.php?option=com_sppagebuilder&view=comments',
 			'access' => 1,
 			'icon'   => 'fas fa-comment',

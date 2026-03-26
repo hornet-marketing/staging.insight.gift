@@ -18,6 +18,7 @@ use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Helper\UserGroupsHelper;
 use Joomla\CMS\Version;
+use Joomla\CMS\Uri\Uri;
 
 class SppagebuilderAddonArticles extends SppagebuilderAddons
 {
@@ -82,6 +83,7 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 		}
 
 		$settings = $this->addon->settings;
+		$addon_id = '#sppb-addon-' . $this->addon->id;
 
 
 		$class = (isset($settings->class) && $settings->class) ? $settings->class : '';
@@ -135,6 +137,10 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 		$article_modified_date 	 	  = ComponentHelper::getParams('com_content')->get('show_modify_date');
 		$article_created_date 	 	  = ComponentHelper::getParams('com_content')->get('show_publish_date');
 
+		$pagination = (isset($settings->pagination)) ? (int) $settings->pagination : 0;
+		$pagination_load_more_button_text = (isset($settings->pagination_load_more_button_text) && $settings->pagination_load_more_button_text) ? $settings->pagination_load_more_button_text : Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_PAGINATION_TYPE_LOAD_MORE');
+		$pagination_load_more_button_type = (isset($settings->pagination_load_more_button_type) && $settings->pagination_load_more_button_type) ? $settings->pagination_load_more_button_type : 'dark';
+
 		$all_articles_btn_text   = (!empty($settings->all_articles_btn_text) && $settings->all_articles_btn_text) ? $settings->all_articles_btn_text : Text::_('COM_SPPAGEBUILDER_ADDON_ARTICLES_SEE_ALL_POSTS');
 		$all_articles_btn_aria_label_text = $all_articles_btn_text;
 		$all_articles_btn_class  = (!empty($settings->all_articles_btn_size) && $settings->all_articles_btn_size) ? ' sppb-btn-' . $settings->all_articles_btn_size : '';
@@ -173,7 +179,7 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 			}
 		} else {
 			require_once $article_helper;
-			$items = SppagebuilderHelperArticles::getArticles($limit, $ordering, $catid, $include_subcat, $post_type, $tagids);
+			$items = SppagebuilderHelperArticles::getArticles($limit, $ordering, $catid, $include_subcat, $post_type, $tagids, 1, 1);
 		}
 
 		if (!count($items)) {
@@ -195,27 +201,27 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 			if ($layout === 'masonry') {
 				$layoutRowCls .= ' sppb-addon-article-layout-masonry-row ';
 				$output .= '<style>
-				.sppb-addon-articles .sppb-addon-article-layout-masonry-row {
+				'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-masonry-row {
 					display: block;
 					column-count: ' . $columns_lg . ';
 				}
 				@media (max-width: 1200px) {
-					.sppb-addon-articles .sppb-addon-article-layout-masonry-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-masonry-row {
 						column-count: ' . $columns_md . ';
 					}
 				}
 				@media (max-width: 992px) {
-					.sppb-addon-articles .sppb-addon-article-layout-masonry-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-masonry-row {
 						column-count: ' . $columns_sm . '; 
 					}
 				}
 				@media (max-width: 768px) {
-					.sppb-addon-articles .sppb-addon-article-layout-masonry-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-masonry-row {
 						column-count: ' . $columns_xs . '; 
 					}
 				}
 				@media (max-width: 575px) {
-					.sppb-addon-articles .sppb-addon-article-layout-masonry-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-masonry-row {
 						column-count: ' . $columns . '; 
 					}
 				}
@@ -223,27 +229,27 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 			} elseif ($layout === 'editorial' || $layout === 'magazine') {
 				$layoutRowCls .= ' sppb-addon-article-layout-' . $layout . '-row ';
 				$output .= '<style>
-				.sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
+				'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
 					display: grid;
 					grid-template-columns: repeat(' . $columns_lg . ', 1fr);
 				}
 				@media (max-width: 1200px) {
-					.sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
 						grid-template-columns: repeat(' . $columns_md . ', 1fr);
 					}
 				}
 				@media (max-width: 992px) {
-					.sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
 						grid-template-columns: repeat(' . $columns_sm . ', 1fr);
 					}
 				}
 				@media (max-width: 768px) {
-					.sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
 						grid-template-columns: repeat(' . $columns_xs . ', 1fr); 
 					}
 				}
 				@media (max-width: 575px) {
-					.sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
+					'.$addon_id.' .sppb-addon-articles .sppb-addon-article-layout-' . $layout . '-row {
 						grid-template-columns: repeat(' . $columns . ', 1fr);
 					}
 				}
@@ -509,6 +515,12 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 			}
 
 			$output  .= '</div>';
+
+		if ($pagination) {
+			$output .= $this->renderPagination($settings, $limit, $catid, $include_subcat, $post_type, $tagids, $ordering);
+		}
+
+
 			$output  .= '</div>';
 		}
 
@@ -615,6 +627,54 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 							$custom_field->value = $groupName ? $groupName : '';
 	  					 }
 					}
+	}
+
+	/**
+	 * Render pagination for articles
+	 *
+	 * @param object $settings The addon settings
+	 * @param int $limit The limit per page
+	 * @param array $catid Category IDs
+	 * @param bool $include_subcat Include subcategories
+	 * @param string $post_type Post format type
+	 * @param array $tagids Tag IDs
+	 * @param string $ordering Ordering type
+	 * @return string The pagination HTML
+	 */
+	private function renderPagination($settings, $limit, $catid, $include_subcat, $post_type, $tagids, $ordering)
+	{
+		/** @var CMSApplication */
+		$app = Factory::getApplication();
+		$totalArticles = SppagebuilderHelperArticles::getArticlesCount($catid, $include_subcat, $post_type, $tagids, 1);
+		$totalPages = ceil($totalArticles / $limit);
+		$currentPage = 1;
+
+		if ($totalPages <= 1) {
+			return '';
+		}
+
+		$loadMoreButtonText = $settings->pagination_load_more_button_text ?? Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_PAGINATION_TYPE_LOAD_MORE');
+		$loadMoreButtonType = $settings->pagination_load_more_button_type ?? 'dark';
+
+		$output = '<div class="sppb-addon-articles__pagination">';
+
+		$output .= '<button type="button" data-text="' . $loadMoreButtonText . '" data-sppb-articles-load-more-button data-total-pages="' . $totalPages . '" class="sppb-btn btn-sm sppb-btn-' . $loadMoreButtonType . '">' . $loadMoreButtonText . '</button>';
+
+		$output .= '<input type="hidden" name="sppb-articles-addon-id" value="' . $this->addon->id . '">';
+		$output .= '<input type="hidden" name="sppb-articles-addon-settings" value="' . (htmlspecialchars(json_encode($settings), ENT_QUOTES, "UTF-8")) . '">';
+		$output .= '<input type="hidden" name="sppb-articles-limit" value="' . $limit . '">';
+		$output .= '<input type="hidden" name="sppb-articles-ordering" value="' . $ordering . '">';
+		$output .= '<input type="hidden" name="sppb-articles-catid" value="' . (htmlspecialchars(json_encode($catid), ENT_QUOTES, 'UTF-8')) . '">';
+		$output .= '<input type="hidden" name="sppb-articles-include-subcat" value="' . $include_subcat . '">';
+		$output .= '<input type="hidden" name="sppb-articles-post-type" value="' . $post_type . '">';
+		$output .= '<input type="hidden" name="sppb-articles-tagids" value="' . (htmlspecialchars(json_encode($tagids), ENT_QUOTES, 'UTF-8')) . '">';
+
+		$app->getDocument()->addScriptOptions("sppb-root", Uri::root());
+		$app->getDocument()->addScript(Uri::root(true) . '/components/com_sppagebuilder/assets/js/articles-pagination.js');
+
+		$output .= '</div>';
+
+		return $output;
 	}
 
 	public function css()
@@ -809,6 +869,19 @@ class SppagebuilderAddonArticles extends SppagebuilderAddons
 		$transformCss = $cssHelper->generateTransformStyle('.sppb-addon-content', $settings, 'transform');
 
 		$css .= $transformCss;
+
+		$pagination = (isset($settings->pagination)) ? (int) $settings->pagination : 0;
+		if ($pagination) {
+			$css .= $cssHelper->generateStyle('.sppb-addon-articles__pagination', $settings, [
+				'pagination_buttons_position' => 'display: flex; justify-content',
+				'pagination_padding' => 'padding',
+				'pagination_margin' => 'margin',
+			], [
+				'pagination_buttons_position' => false,
+				'pagination_padding' => false,
+				'pagination_margin' => false,
+			]);
+		}
 
 		return $css;
 	}

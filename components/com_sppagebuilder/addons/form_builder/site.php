@@ -113,6 +113,8 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         $output .= '<form class="sppb-addon-form-builder-form"' . ($enable_redirect && $redirect_url != '' ? ' data-redirect="yes" data-redirect-url="' . $redirect_url . '"' : '') . '>';
         $output .= HTMLHelper::_('form.token');
 
+        $date_formatters = [];
+
         if (isset($settings->sp_form_builder_item) && is_array($settings->sp_form_builder_item)) {
             $increasing_addon_id = (int) $addon_id;
 
@@ -140,6 +142,11 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
                 $tel_pattern       = (isset($item_value->tel_pattern) && $item_value->tel_pattern) ? $item_value->tel_pattern : '';
                 $minimum_character = (isset($item_value->minimum_character) && $item_value->minimum_character) ? " minlength = " . $item_value->minimum_character : '';
                 $maximum_character = (isset($item_value->maximum_character) && $item_value->maximum_character) ? " maxlength = " . $item_value->maximum_character : '';
+                
+                if ($field_type === 'date' && $field_name) {
+                    $date_formatter = (isset($item_value->date_formatter) && $item_value->date_formatter) ? $item_value->date_formatter : 'Y-m-d';
+                    $date_formatters[$field_name] = $date_formatter;
+                }
 
                 if ($field_type == 'radio') {
                     $output .= '<div class="sppb-form-group ' . $item_name_id . '">';
@@ -292,6 +299,7 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
             'additional_header'             => base64_encode($additional_header),
             'from'                          => base64_encode($from),
             'send_copy_to_applicant'        => base64_encode($send_copy_to_applicant),
+            'date_formatters'                => base64_encode(json_encode($date_formatters)),
         ];
         $hidden_json   = json_encode($hidden_value);
         $hidden_base64 = base64_encode($hidden_json);
@@ -401,6 +409,7 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
 
         $gcaptcha = '';
         $addonId  = '';
+        $decrypted_data = null;
 
         foreach ($inputs as $name => $input) {
 
@@ -542,7 +551,7 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
             return json_encode($output);
         }
 
-        if (empty($viewid) && $view === 'dynamic') {
+        if ($view === 'dynamic') {
             $viewid = (new SppagebuilderModelDynamic())->getPageIdFromCollectionItemId();
         }
 
@@ -668,9 +677,28 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
             }
         }
 
+        $dateFormatters = [];
+        if ($decrypted_data && isset($decrypted_data->date_formatters) && $decrypted_data->date_formatters) {
+            $dateFormattersJson = json_decode(base64_decode($decrypted_data->date_formatters), true);
+            if (is_array($dateFormattersJson)) {
+                $dateFormatters = $dateFormattersJson;
+            }
+        }
+
         $output['fields'] = $fieldNames;
 
         foreach ($fieldNames as $name => $value) {
+            if (isset($dateFormatters[$name]) && !empty($value)) {
+                try {
+                    $dateObj = new DateTime($value);
+                    $formattedValue = $dateObj->format($dateFormatters[$name]);
+                    $value = $formattedValue;
+                    $fieldNames[$name] = $formattedValue;
+                } catch (Exception $e) {
+                    // If date parsing fails, use original value
+                }
+            }
+            
             $emailBody        = str_replace("{{" . $name . "}}", $value, $emailBody);
             $emailSubjectAjax = str_replace("{{" . $name . "}}", $value, $emailSubjectAjax);
             $replyToName      = str_replace("{{" . $name . "}}", $value, $replyToName);
@@ -957,7 +985,7 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         $css .= $css_path->render(['addon_id' => $addon_id, 'options' => $options, 'id' => 'btn-' . $this->addon->id]);
 
         $btn_size = (isset($settings->btn_size) && $settings->btn_size) ? $settings->btn_size : '';
-        if ((! empty($options->button_type) && $options->button_type === "custom")) {
+        if ((! empty($btn_size) && $btn_size === "custom")) {
             $btnPadding = $cssHelper->generateStyle('.sppb-form-builder-btn button', $settings, ['btn_padding' => 'padding'], [], ['btn_padding' => 'spacing']);
             $css .= $btnPadding;
         }
@@ -1022,6 +1050,7 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         }
         return false;
     }
+
 
     /**
      * Generate the lodash template string for the frontend editor.
@@ -1198,7 +1227,6 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         <# } #>';
 
         $output .= '<# if (data.btn_type == "custom") { #>';
-        $output .= $lodash->spacing('padding', '#btn-{{ data.id }}.sppb-btn-custom', 'data.btn_padding');
         $output .= $lodash->color('color', '#btn-{{ data.id }}.sppb-btn-custom', 'data.btn_color');
         $output .= $lodash->color('color', '#btn-{{ data.id }}.sppb-btn-custom:hover', 'data.btn_color_hover');
         $output .= $lodash->color('background-color', '#btn-{{ data.id }}.sppb-btn-custom:hover', 'data.btn_background_color_hover');
@@ -1217,6 +1245,11 @@ class SppagebuilderAddonForm_builder extends SppagebuilderAddons
         $output .= '<# } else { #>';
         $output .= $lodash->color('background-color', '#btn-{{ data.id }}.sppb-btn-custom', 'data.btn_background_color');
         $output .= '<# } #>';
+        $output .= '<# } #>';
+
+
+        $output .= '<# if (!_.isEmpty(data.btn_padding) && data.btn_size == "custom") { #>';
+        $output .= $lodash->spacing('padding', '#btn-{{ data.id }}.sppb-btn-custom', 'data.btn_padding');
         $output .= '<# } #>';
 
         $output .= $lodash->unit('margin', '.sppb-form-builder-btn button', 'data.btn_margin');

@@ -38,7 +38,10 @@ if (!$params->get('disableanimatecss', 0))
 if (!$params->get('disablecss', 0))
 {
 	SppagebuilderHelperSite::addStylesheet('sppagebuilder.css');
-	SppagebuilderHelperSite::addStylesheet('animate.min.css');
+	if (!$params->get('disableanimatecss', 0))
+	{
+		SppagebuilderHelperSite::addStylesheet('animate.min.css');
+	}
 }
 
 SppagebuilderHelperSite::addStylesheet('dynamic-content.css');
@@ -92,7 +95,7 @@ if (isset($page->css) && $page->css)
 	<?php endif; ?>
 
 	<div class="page-content">
-		<?php $pageName = 'page-' . $page->id; ?>
+		<?php $pageName = 'page-' . (isset($page->id) ? $page->id : 'blank'); ?>
 		<?php echo AddonParser::viewAddons($content, 0, $pageName); ?>
 
 		<?php if ($this->canEdit) : ?>

@@ -57,13 +57,14 @@ class Comment extends ItemModel
 	 * @param int|null $itemId
 	 * @return int
 	 */
-	public function getPublishedCommentsCount($itemId){
+	public function getPublishedCommentsCount($itemId, $sourceType = 'articles'){
 		$db = $this->getDbo();
 		$query = $db->getQuery(true);
 
 		$query->select('COUNT(*)')
 			->from($db->quoteName('#__sppagebuilder_comments'))
 			->where($db->quoteName('item_id') . ' = ' . (int) $itemId)
+			->where($db->quoteName('source_type') . ' = ' . $db->quote($sourceType))
 			->where($db->quoteName('published') . ' = 1');
 
 		$db->setQuery($query);
@@ -353,6 +354,7 @@ class Comment extends ItemModel
             $record = (object) [
                 'id' => null,
                 'item_id' => $payload['item_id'],
+				'source_type' => !empty($payload['source_type']) ? $payload['source_type'] : 'articles',
                 'created_by' => $payload['created_by'],
 				'created_on' => Date::sqlSafeDate(),
 				'modified' => Date::sqlSafeDate(),
@@ -380,7 +382,7 @@ class Comment extends ItemModel
 
     }
 
-    public function getAllComments($itemId = null){
+    public function getAllComments($itemId = null, $sourceType = 'articles'){
 		if(empty($itemId)) {
 			return false;
 		}
@@ -406,6 +408,7 @@ class Comment extends ItemModel
 				->join('LEFT', $db->quoteName('#__sppagebuilder_likes', 'ul') . ' ON ' . $db->quoteName('ul.comment_id') . ' = ' . $db->quoteName('c.id') . ' AND ' . $db->quoteName('ul.user_id') . ' = ' . (int) $currentUserId)
 				->join('LEFT', $db->quoteName('#__user_profiles', 'p') . ' ON ' . $db->quoteName('p.user_id') . ' = ' . $db->quoteName('c.created_by') . ' AND ' . $db->quoteName('p.profile_key') . ' = ' . $db->quote('profileimage.profile_image'))
 				->where($db->quoteName('c.item_id') . ' = ' . (int) $itemId)
+				->where($db->quoteName('c.source_type') . ' = ' . $db->quote($sourceType))
 				->where($db->quoteName('c.published') . ' IN (1, 0)')
 				->group($db->quoteName('c.id'))
 				->order($db->quoteName('c.created_on') . ' DESC');
@@ -418,7 +421,7 @@ class Comment extends ItemModel
         }
     }
 
-	public function getApprovedComments($userId, $itemId)
+	public function getApprovedComments($userId, $itemId, $sourceType = 'articles')
 	{
 		$db = $this->getDbo();
 		$query = $db->getQuery(true);
@@ -427,6 +430,7 @@ class Comment extends ItemModel
 			->from($db->quoteName('#__sppagebuilder_comments'))
 			->where($db->quoteName('created_by') . ' = ' . (int) $userId)
 			->where($db->quoteName('item_id') . ' = ' . (int) $itemId)
+			->where($db->quoteName('source_type') . ' = ' . $db->quote($sourceType))
 			->where($db->quoteName('published') . ' = 1');
 
 		$db->setQuery($query);

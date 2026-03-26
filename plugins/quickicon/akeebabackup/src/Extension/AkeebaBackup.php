@@ -1,7 +1,7 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2024 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -48,21 +48,8 @@ class AkeebaBackup extends CMSPlugin implements SubscriberInterface, DatabaseAwa
 	 */
 	private $document;
 
-	/**
-	 * Constructor
-	 *
-	 * @param   DispatcherInterface  $subject   The object to observe
-	 * @param   Document             $document  The document
-	 * @param   array                $config    An optional associative array of configuration settings.
-	 *                                          Recognized key values include 'name', 'group', 'params', 'language'
-	 *                                          (this list is not meant to be comprehensive).
-	 *
-	 * @since   9.0.0
-	 */
-	public function __construct(DispatcherInterface $subject, Document $document, array $config = [])
+	public function setDocument(Document $document)
 	{
-		parent::__construct($subject, $config);
-
 		$this->document = $document;
 	}
 

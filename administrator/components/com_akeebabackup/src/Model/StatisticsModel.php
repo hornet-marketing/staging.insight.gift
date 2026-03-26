@@ -1,7 +1,7 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -35,7 +35,7 @@ class StatisticsModel extends ListModel
 {
 	use ModelStateFixTrait;
 	
-	public function __construct($config = [], MVCFactoryInterface $factory = null)
+	public function __construct($config = [], ?MVCFactoryInterface $factory = null)
 	{
 		if (empty($config['filter_fields']))
 		{
@@ -54,11 +54,6 @@ class StatisticsModel extends ListModel
 		$this->filterFormName = 'filter_manage';
 	}
 
-	public function unfuck()
-	{
-		$this->__state_set = true;
-	}
-
 	/**
 	 * Is this string a valid remote filename?
 	 *
@@ -72,7 +67,7 @@ class StatisticsModel extends ListModel
 	 *
 	 * @since   9.2.2
 	 */
-	public function isRemoteFilename(string $filename = null): bool
+	public function isRemoteFilename(?string $filename = null): bool
 	{
 		// A remote filename has to be a string which is does not consist solely of whitespace
 		if (!is_string($filename) || trim($filename) === '')
@@ -203,6 +198,186 @@ class StatisticsModel extends ListModel
 	}
 
 	/**
+	 * Send an email notification for backups which failed to upload to remote storage.
+	 *
+	 * @return  array  See the CLI script
+	 * @since   10.1.0
+	 */
+	public function notifyFailedUploads()
+	{
+		// Get profile ID with a post proc engine
+		$profileIDsWithPostProc = $this->getProfileIDsWithPostProcEngines();
+
+		if (empty($profileIDsWithPostProc))
+		{
+			return [
+				'message' => ["No need to run: no backup profiles with remote storage currently set up."],
+				'result'  => true,
+			];
+		}
+
+		$cParams = ComponentHelper::getParams('com_akeebabackup');
+
+		// Get the last execution and search for failed uploads AFTER that date
+		$last = $this->getLastCheck('akeeba_checkfailedupload');
+
+		// Get backup records with failed uploads
+		$filters                       = [
+			['field' => 'profile_id', 'operand' => 'IN', 'value' => $profileIDsWithPostProc],
+			['field' => 'status', 'operand' => '=', 'value' => 'complete'],
+			['field' => 'type', 'operand' => '!=', 'value' => 'dbonly'],
+			['field' => 'filesexist', 'operand' => '=', 'value' => '1'],
+			['field' => 'frozen', 'operand' => '=', 'value' => '0'],
+			['field' => 'remote_filename', 'operand' => 'EMPTY', 'value' => ''],
+			['field' => 'backupstart', 'operand' => '>', 'value' => $last],
+		];
+
+		$failedUploads = Platform::getInstance()->get_statistics_list(['filters' => $filters]);
+
+		// Well, everything went ok.
+		if (!$failedUploads)
+		{
+			return [
+				'message' => ["No need to run: no backups with failed uploads, or notifications were already sent."],
+				'result'  => true,
+			];
+		}
+
+		// Whops! Something went wrong, let's start notifing
+		$superAdmins     = [];
+		$superAdminEmail = $cParams->get('uploadfailure_email_address', '');
+
+		if (!empty($superAdminEmail))
+		{
+			$superAdmins = $this->getSuperUsers($superAdminEmail);
+		}
+
+		if (empty($superAdmins))
+		{
+			$superAdmins = $this->getSuperUsers();
+		}
+
+		if (empty($superAdmins))
+		{
+			return [
+				'message' => ["Failed uploads(s) detected, but there are no configured Super Administrators to receive notifications"],
+				'result'  => false,
+			];
+		}
+
+		$failedReport = [];
+
+		foreach ($failedUploads as $fail)
+		{
+			$string  = "Description : " . $fail['description'] . "\n";
+			$string .= "Start time  : " . $fail['backupstart'] . "\n";
+			$string .= "Origin      : " . $fail['origin'] . "\n";
+			$string .= "Type        : " . $fail['type'] . "\n";
+			$string .= "Profile ID  : " . $fail['profile_id'] . "\n";
+			$string .= "Backup ID   : " . $fail['id'];
+
+			$failedReport[] = $string;
+		}
+
+		$failedReport = implode("\n#-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+#\n", $failedReport);
+
+		$email_subject = $cParams->get('uploadfailure_email_subject', '');
+
+		if (!$email_subject)
+		{
+			$email_subject = <<<ENDSUBJECT
+THIS EMAIL IS SENT FROM YOUR SITE "[SITENAME]" - Failed to upload the following backup(s) to remote storage
+ENDSUBJECT;
+		}
+
+		$email_body = $cParams->get('uploadfailure_email_body', '');
+
+		if (!$email_body)
+		{
+			$email_body = <<<ENDBODY
+================================================================================
+FAILED BACKUP UPLOAD ALERT
+================================================================================
+
+Your site has determined that there are backups which failed to upload to remote
+storage.
+
+The following backups failed to upload to remote storage:
+
+[FAILEDLIST]
+
+================================================================================
+WHY AM I RECEIVING THIS EMAIL?
+================================================================================
+
+This email has been automatically sent by a script that you, or the person who
+built or manages your site, has installed and explicitly configured. This script
+looks for backups which failed to upload to remote storage and sends an email
+notification to all Super Users.
+
+If you do not understand what this means, please do not contact the authors of
+the software. They are NOT sending you this email and they cannot help you.
+Instead, please contact the person who built or manages your site.
+
+================================================================================
+WHO SENT ME THIS EMAIL?
+================================================================================
+
+This email is sent to you by your own site, [SITENAME]
+
+ENDBODY;
+		}
+
+		$app = JoomlaFactory::getApplication();
+
+		$mailfrom = $app->get('mailfrom');
+		$fromname = $app->get('fromname');
+
+		$email_subject = Factory::getFilesystemTools()->replace_archive_name_variables($email_subject);
+		$email_body    = Factory::getFilesystemTools()->replace_archive_name_variables($email_body);
+		$email_body    = str_replace('[FAILEDLIST]', $failedReport, $email_body);
+
+		foreach ($superAdmins as $sa)
+		{
+			try
+			{
+				/** @var Mail $mailer */
+				$mailer = JFactory::getContainer()->get(MailerFactoryInterface::class)->createMailer();
+
+				$mailer->setSender([$mailfrom, $fromname]);
+				$mailer->addRecipient($sa->email);
+				$mailer->setSubject($email_subject);
+				$mailer->setBody($email_body);
+				$mailer->Send();
+			}
+			catch (Exception $e)
+			{
+				// Joomla! 3.5 is written by incompetent bonobos
+			}
+		}
+
+		// Let's update the last time we check, so we will avoid to send
+		// the same notification several times
+		$this->updateLastCheck(intval($last), 'akeeba_checkfailedupload');
+
+		return [
+			'message' => [
+				sprintf(
+					'Found %d failed upload(s)',
+					(is_array($failedUploads) || $failedUploads instanceof \Countable)
+						? count($failedUploads)
+						: 0
+				),
+				sprintf(
+					"Sent %s notifications",
+					count($superAdmins)
+				),
+			],
+			'result'  => false,
+		];
+	}
+
+	/**
 	 * Send an email notification for failed backups
 	 *
 	 * @return  array  See the CLI script
@@ -301,9 +476,9 @@ ENDSUBJECT;
 FAILED BACKUP ALERT
 ================================================================================
 
-Your site has determined that there are failed backups.
+Your site has determined that one or more backups failed to complete.
 
-The following backups are found to be failing:
+The following backups have failed to complete:
 
 [FAILEDLIST]
 
@@ -311,9 +486,9 @@ The following backups are found to be failing:
 WHY AM I RECEIVING THIS EMAIL?
 ================================================================================
 
-This email has been automatically sent by scritp you, or the person who built
-or manages your site, has installed and explicitly configured. This script looks
-for failed backups and sends an email notification to all Super Users.
+This email has been automatically sent by a script which you, or the person who
+built or manages your site, has installed and explicitly configured. This script
+looks for failed backups and sends an email notification to all Super Users.
 
 If you do not understand what this means, please do not contact the authors of
 the software. They are NOT sending you this email and they cannot help you.
@@ -419,6 +594,55 @@ ENDBODY;
 		$this->cache[$store] = new Pagination($total, $limitstart, $limit);
 
 		return $this->cache[$store];
+	}
+
+	/**
+	 * Returns the profile IDs which have a post-processing engine enabled.
+	 *
+	 * @return  array
+	 * @since   10.1.0
+	 */
+	protected function getProfileIDsWithPostProcEngines(): array
+	{
+		try
+		{
+			$db         = $this->dbo;
+			$query      = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
+				->select($db->quoteName('id'))
+				->from($db->quoteName('#__akeebabackup_profiles'));
+			$profileIDs = $db->setQuery($query)->loadColumn() ?: [];
+		}
+		catch (Exception $e)
+		{
+			return [];
+		}
+
+		$currentProfileId = Platform::getInstance()->get_active_profile() ?: 1;
+		$applicableProfileIDs = [];
+
+		foreach ($profileIDs as $profileID)
+		{
+			try
+			{
+				Platform::getInstance()->load_configuration($profileID);
+				$engine = Factory::getConfiguration()->get('akeeba.advanced.postproc_engine') ?: 'none';
+			}
+			catch (Exception $e)
+			{
+				continue;
+			}
+
+			if ($engine === 'none')
+			{
+				continue;
+			}
+
+			$applicableProfileIDs[] = $profileID;
+		}
+
+		Platform::getInstance()->load_configuration($currentProfileId);
+
+		return $applicableProfileIDs;
 	}
 
 	protected function populateState($ordering = null, $direction = null)
@@ -593,11 +817,12 @@ ENDBODY;
 	/**
 	 * Update the time we last checked for failed backups
 	 *
-	 * @param   int  $exists  Any non zero value means that we update, not insert, the record
+	 * @param   bool    $exists  Any non zero value means that we update, not insert, the record
+	 * @param   string  $tag     The storage tag to update, default `akeeba_checkfailed`
 	 *
 	 * @return  void
 	 */
-	private function updateLastCheck($exists)
+	private function updateLastCheck(bool $exists = false, string $tag = 'akeeba_checkfailed')
 	{
 		$db = $this->getDatabase();
 
@@ -607,7 +832,8 @@ ENDBODY;
 		$query = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
 		            ->insert($db->qn('#__akeebabackup_storage'))
 		            ->columns([$db->qn('tag'), $db->qn('lastupdate')])
-		            ->values($db->q('akeeba_checkfailed') . ', :lastupdate')
+		            ->values(':tag, :lastupdate')
+		            ->bind(':tag', $tag)
 		            ->bind(':lastupdate', $nowToSql);
 
 		if ($exists)
@@ -615,7 +841,8 @@ ENDBODY;
 			$query = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
 			            ->update($db->qn('#__akeebabackup_storage'))
 			            ->set($db->qn('lastupdate') . ' = :lastupdate')
-			            ->where($db->qn('tag') . ' = ' . $db->q('akeeba_checkfailed'))
+			            ->where($db->qn('tag') . ' = :tag')
+			            ->bind(':tag', $tag)
 			            ->bind(':lastupdate', $nowToSql);
 		}
 
@@ -631,16 +858,19 @@ ENDBODY;
 	/**
 	 * Get the last update check date and time stamp
 	 *
+	 * @param   string  $tag     The storage tag to update, default `akeeba_checkfailed`
+	 *
 	 * @return  string
 	 */
-	private function getLastCheck()
+	private function getLastCheck(string $tag = 'akeeba_checkfailed')
 	{
 		$db = $this->getDatabase();
 
 		$query = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
 		            ->select($db->qn('lastupdate'))
 		            ->from($db->qn('#__akeebabackup_storage'))
-		            ->where($db->qn('tag') . ' = ' . $db->q('akeeba_checkfailed'));
+		            ->where($db->qn('tag') . ' = :tag')
+					->bind(':tag', $tag);
 
 		$datetime = $db->setQuery($query)->loadResult();
 

@@ -1,3 +1,51 @@
+Akeeba Backup 10.3.2
+================================================================================
+~ Obfuscate the PostgreSQL dump engine EVEN MORE AGGRESSIVELY so that certain antivirus don't throw a false positive.
+
+Akeeba Backup 10.3.1
+================================================================================
+~ Obfuscate the PostgreSQL dump engine so that certain antivirus don't throw a false positive.
+
+Akeeba Backup 10.3.0
+================================================================================
++ PostgreSQL support
+
+Akeeba Backup 10.2.2
+================================================================================
++ Failed backup and failed uploads checks are now available as Joomla Scheduled Tasks
+# [LOW] PHP Warning when deleting backup archives under PHP 8.4 and later versions
+# [LOW] The AKWarn plugin may not work on hosts with open_basedir restrictions not allowing access to the site's root.
+
+Akeeba Backup 10.2.1
+================================================================================
+# [HIGH] Joomla 5.4 and 6.0: The console plugin is raising a PHP warning
+
+Akeeba Backup 10.2.0
+================================================================================
++ System plugin to notify you of leftovers after restoration
++ Site Transfer Wizard now uploads Kickstart under a random filename
+~ New archive extraction script (based on Kickstart 9)
+~ PHP 8.5 compatibility
+# [HIGH] MySQL to MariaDB: SQL errors when the collation is converted to
+ `uca1400_*`
+# [HIGH] Site Transfer Wizard: Would not accept SFTP using certificates
+# [HIGH] Alternate backup and backup check no longer worked in Joomla 6
+# [HIGH] Checking the output directory for direct web access no longer worked in Joomla 6
+# [HIGH] The Site Transfer Wizard could fail in Joomla 6
+# [MEDIUM] WebPush no longer worked in Joomla 6
+
+Akeeba Backup 10.1.0
+================================================================================
++ "Only back up tables installed by Joomla! and its extensions" filter
++ Failed backup upload check
+~ Preliminary support for Joomla 6
+~ PHP 8.5 compatibility: setAccessible is deprecated for reflection objects
+~ PHP 8.5 compatibility: implicit nullable method parameters are deprecated
+# [HIGH] "Normalise character set" can break the restoration
+# [LOW] Dark Mode: Status row text had almost no contrast
+# [LOW] Cannot filter Manage Backups by Frozen state
+# [LOW] Moving from MariaDB to MySQL could result in SQL error.
+
 Akeeba Backup 10.0.6
 ================================================================================
 ~ Preliminary support for Joomla 6

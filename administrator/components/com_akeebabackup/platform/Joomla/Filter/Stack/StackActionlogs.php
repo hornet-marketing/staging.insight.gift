@@ -1,7 +1,7 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -31,6 +31,12 @@ class StackActionlogs extends Base
 		static $excluded = [
 			'#__action_logs',
 		];
+
+		// This filter only applies to the main site database.
+		if ($root !== '[SITEDB]')
+		{
+			return false;
+		}
 
 		// Is it one of the blacklisted tables?
 		if (in_array($test, $excluded))

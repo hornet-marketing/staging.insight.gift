@@ -4,7 +4,7 @@
  *
  * An abstraction layer for easier implementation of WebPush in Joomla components.
  *
- * @copyright Copyright (c) 2022-2025 Akeeba Ltd
+ * @copyright Copyright (c) 2022-2026 Akeeba Ltd
  * @license   GNU GPL v3 or later; see LICENSE.txt
  *
  * This program is free software: you can redistribute it and/or modify
@@ -247,7 +247,12 @@ trait WebPushModelTrait
 
 		foreach ($subscriptions as $subscription)
 		{
-			$reports[] = $webPush->sendOneNotification($subscription, $payload);
+			$report = $webPush->sendOneNotification($subscription, $payload);
+
+			if ($report !== null)
+			{
+				$reports[] = $report;
+			}
 		}
 
 		return $reports;
@@ -559,7 +564,11 @@ trait WebPushModelTrait
 		// Reset ComponentHelper's cache
 		$refClass = new \ReflectionClass(ComponentHelper::class);
 		$refProp  = $refClass->getProperty('components');
-		$refProp->setAccessible(true);
+
+		if (version_compare(PHP_VERSION, '8.1.0', 'lt'))
+		{
+			$refProp->setAccessible(true);
+		}
 
 		if (version_compare(PHP_VERSION, '8.3.0', 'ge'))
 		{

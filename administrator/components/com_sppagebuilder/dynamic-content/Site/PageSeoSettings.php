@@ -12,6 +12,8 @@ use ApplicationHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Pathway\Pathway;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Registry\Registry;
 use JoomShaper\SPPageBuilder\DynamicContent\Constants\FieldTypes;
@@ -132,6 +134,7 @@ class PageSeoSettings
         $this->prepareOgMetaTags();
         $this->prepareTwitterMetaTags();
         $this->preparePageMetaTags();
+        $this->preparePathway();
     }
 
     /**
@@ -296,7 +299,7 @@ class PageSeoSettings
      * @return string
      * @since 5.5.0
      */
-    protected function parseVariable($value)
+    protected function parseVariable($value, $isStripTags = false)
     {
         if (empty($value) || empty($this->collectionData)) {
             return $value;
@@ -315,6 +318,10 @@ class PageSeoSettings
 
             if (is_null($replacement)) {
                 continue;
+            }
+
+            if ($isStripTags) {
+                $replacement = strip_tags($replacement);
             }
 
             $value = str_replace($match, $replacement, $value);
@@ -385,22 +392,26 @@ class PageSeoSettings
             }
         }
 
-        if (is_object($ogImage) && isset($ogImage->src)) {
-            $ogImage = $ogImage->src;
+        if (is_object($ogImage)) {
+            if(isset($ogImage->src)) {
+                $ogImage = $ogImage->src;
+            } else {
+                $ogImage = '';
+            }
         }
-
-        
 
         $attributes->og_title = $this->parseVariable($ogTitle);
         $attributes->og_image = $this->parseVariable($ogImage) ?? '';
         $attributes->og_alt = $this->parseVariable($ogAlt);
-        $attributes->meta_description = $this->parseVariable($metaDescription) ?? '';
+        $attributes->meta_description = $this->parseVariable($metaDescription, true) ?? '';
 
-        if (stripos($attributes->og_image, 'http') !== 0) {
+
+        
+        if (!empty($attributes->og_image) && stripos($attributes->og_image, 'http') !== 0) {
             $attributes->og_image = Uri::root() . $attributes->og_image;
         }
 
-        $attributes->og_description = $this->parseVariable($ogDescription);
+        $attributes->og_description = $this->parseVariable($ogDescription, true);
         $this->attributes = new Registry($attributes);
         return $this;
     }
@@ -420,8 +431,11 @@ class PageSeoSettings
             $pageTitle = $this->menu->title ?? '';
         }
 
-        if (!empty($this->collectionData) && !empty($this->collectionData['{{title}}'])) {
-            $pageTitle = $this->collectionData['{{title}}'];
+        if (!empty($this->collectionData)) {
+            $titleValue = $this->getTitleFieldValue();
+            if (!empty($titleValue)) {
+                $pageTitle = $titleValue;
+            }
         }
 
         $globalTitle = (int) $this->globalConfig->get('sitename_pagetitles');
@@ -433,6 +447,41 @@ class PageSeoSettings
 		}
 
         return $pageTitle;
+    }
+
+    /**
+     * Get the value of the title field by type
+     *
+     * @return string|null
+     * @since 6.2.0
+     */
+    protected function getTitleFieldValue()
+    {
+        if (empty($this->collectionData)) {
+            return null;
+        }
+
+        $collectionId = $this->collectionData['collection_id'] ?? null;
+
+        if (empty($collectionId)) {
+            return null;
+        }
+
+        if ($collectionId === CollectionIds::ARTICLES_COLLECTION_ID || $collectionId === CollectionIds::TAGS_COLLECTION_ID) {
+            return $this->collectionData['{{title}}'] ?? null;
+        }
+
+        $titleField = CollectionField::where('collection_id', $collectionId)
+            ->where('type', FieldTypes::TITLE)
+            ->first();
+
+        if (empty($titleField)) {
+            return null;
+        }
+
+        $titleFieldKey = '{{' . strtolower($titleField->name) . '}}';
+        
+        return $this->collectionData[$titleFieldKey] ?? null;
     }
 
     /**
@@ -470,6 +519,7 @@ class PageSeoSettings
 
         $language = $this->pageData->language ?? $this->app->getLanguage()->getTag();
         $language = $language === '*' ? $this->app->getLanguage()->getTag() : $language;
+        $language = str_replace('-', '_', $language);
 
         if(!$isOgDisabled){
             $this->document->addCustomTag('<meta property="og:locale" content="' . $language . '" />');
@@ -635,6 +685,43 @@ class PageSeoSettings
         if (!empty($robots)) {
             $this->document->setMetadata('robots', $robots);
         }
+
+        return $this;
+    }
+
+    /**
+     * Prepare the pathway for dynamic content detail pages
+     *
+     * @return self
+     * @since 6.2.3
+     */
+    protected function preparePathway()
+    {
+        if (empty($this->collectionData)) {
+            return $this;
+        }
+
+        $pathway = $this->app->getPathway();
+        
+        if (empty($pathway)) {
+            return $this;
+        }
+
+        $titleValue = $this->getTitleFieldValue();
+        
+        if (empty($titleValue)) {
+            return $this;
+        }
+
+        $currentUri = Uri::getInstance();
+        $currentPath = $currentUri->getPath();
+        
+        $query = $currentUri->getQuery();
+        if (!empty($query)) {
+            $currentPath .= '?' . $query;
+        }
+
+        $pathway->addItem($titleValue, $currentPath);
 
         return $this;
     }

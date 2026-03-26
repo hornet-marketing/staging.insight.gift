@@ -3,7 +3,7 @@
  * Akeeba Engine
  *
  * @package   akeebaengine
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright (c)2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -578,7 +578,10 @@ class Request
 			);
 		}
 
-		@curl_close($curl);
+		if (version_compare(PHP_VERSION, '8.5.0', 'lt'))
+		{
+			@curl_close($curl);
+		}
 
 		// Set the body data
 		$this->response->finaliseBody($rawResponse);

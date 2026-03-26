@@ -17,7 +17,9 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Helper\MediaHelper;
+use Joomla\Filesystem\File;
 use Joomla\Filesystem\Folder;
+use Joomla\Filesystem\Path;
 use JoomShaper\SPPageBuilder\DynamicContent\Controllers\CollectionImportExportController;
 
 $productListSeed = JPATH_ROOT . '/components/com_easystore/assets/product-list-seed.json';
@@ -167,7 +169,7 @@ if ($action === 'get-pre-page-data')
 {
 	$layout_id = $input->post->get('layout_id', '', 'NUMBER');
 	$output = array('status' => false, 'data' => 'Page not found.');
-	$args = '&email=' . $cParams->get('joomshaper_email') . '&api_key=' . $cParams->get('joomshaper_license_key');
+	$args = '&email=' . urlencode($cParams->get('joomshaper_email')) . '&api_key=' . $cParams->get('joomshaper_license_key');
 	$pageApi = 'https://www.joomshaper.com/index.php?option=com_layouts&task=template.download&support=4beyond&id=' . $layout_id . $args;
 
 	$pageResponse = $http->get($pageApi);
@@ -223,7 +225,7 @@ if ($action === 'pre-section-list')
 	}
 	else
 	{
-		$args = '&email=' . $cParams->get('joomshaper_email') . '&api_key=' . $cParams->get('joomshaper_license_key');
+		$args = '&email=' . urlencode($cParams->get('joomshaper_email')) . '&api_key=' . $cParams->get('joomshaper_license_key');
 		$sectionApi = 'https://www.joomshaper.com/index.php?option=com_layouts&task=block.list&support=4beyond' . $args;
 
 		$sectionResponse = $http->get($sectionApi);

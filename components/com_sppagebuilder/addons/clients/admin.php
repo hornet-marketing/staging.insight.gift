@@ -32,6 +32,11 @@ SpAddonsConfig::addonConfig([
 							'std'   => 'Client 1'
 						],
 
+						'item_visibility' => [
+							'type' => 'visibility',
+							'std'  => true,
+						],
+
 						'image' => [
 							'type'   => 'media',
 							'title'  => Text::_('COM_SPPAGEBUILDER_GLOBAL_IMAGE'),

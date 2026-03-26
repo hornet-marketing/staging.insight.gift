@@ -32,6 +32,11 @@ SpAddonsConfig::addonConfig([
                             'std'   => 'Accordion Title',
                         ],
 
+                        'item_visibility' => [
+                            'type' => 'visibility',
+                            'std'  => true,
+                        ],
+
                         'visual_item_type' => [
                             'type'   => 'buttons',
                             'std'    => 'icon',

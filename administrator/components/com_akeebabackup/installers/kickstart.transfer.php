@@ -1,11 +1,13 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
-defined('KICKSTART') or die;
+namespace Akeeba\Kickstart\Feature;
+
+defined('KSROOTDIR') or die;
 
 /**
  * Akeeba Kickstart Site Transfer Helper add-on feature
@@ -14,7 +16,7 @@ defined('KICKSTART') or die;
  * Backup's Site Transfer Wizard. The features inside this file can only be accessed through Kickstart. Trying to access
  * this file directly will of course fail.
  */
-class AKFeatureTransfer
+class Transfer
 {
 	/**
 	 * Returns information about the server we're running on.
@@ -59,7 +61,7 @@ class AKFeatureTransfer
 		}
 
 		$infoArray = array(
-			'freeSpace'     => disk_free_space(dirname(__FILE__)),
+			'freeSpace'     => disk_free_space(KSROOTDIR),
 			'phpVersion'    => PHP_VERSION,
 			'phpSAPI'       => PHP_SAPI,
 			'phpOS'         => PHP_OS,
@@ -72,7 +74,7 @@ class AKFeatureTransfer
 			'maxPost'       => $this->memoryToBytes($maxPostSize),
 			'maxUpload'     => $this->memoryToBytes($uploadMaxSize),
 			'baseDir'       => $baseDir,
-			'disabledFuncs' => $disabled,
+			'disabledFuncs' => $disabled
 		);
 
 		return $infoArray;
@@ -145,7 +147,7 @@ class AKFeatureTransfer
 			$slashedDir = ($directory === '') ? '/' : sprintf('/%s/', $directory);
 
 			// Do not remove the basename(). It makes sure we won't try to read a file outside our directory.
-			$data = @file_get_contents(__DIR__ . $slashedDir . basename($dataFile));
+			$data = @file_get_contents(KSROOTDIR . $slashedDir . basename($dataFile));
 
 			if (empty($data))
 			{
@@ -170,7 +172,7 @@ class AKFeatureTransfer
 			$directory = '/' . $directory;
 		}
 
-		$filename = __DIR__ . $directory . '/' . $file;
+		$filename = KSROOTDIR . $directory . '/' . $file;
 
 		// Open the file for writing or append
 		$mode = ($frag == 0) ? 'w' : 'a';
@@ -217,7 +219,7 @@ class AKFeatureTransfer
 	private function canWriteToFiles($directory = '')
 	{
 		// Try to create a temporary file
-		$directory = dirname(__FILE__) . '/' . $directory;
+		$directory = KSROOTDIR . '/' . $directory;
 		$directory = rtrim($directory, '/');
 
 		$testFilename = tempnam($directory, 'kst');

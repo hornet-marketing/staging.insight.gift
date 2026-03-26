@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS `#__sppagebuilder` (
   `attribs` varchar(5120) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '[]',
   `og_title` varchar(255) NOT NULL DEFAULT '',
   `og_image` varchar(255) NOT NULL DEFAULT '',
-  `og_description` varchar(255) NOT NULL DEFAULT '',
+  `og_description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `language` char(7) NOT NULL DEFAULT '',
   `hits` bigint(20) NOT NULL DEFAULT '0',
   `css` longtext NOT NULL,
@@ -186,6 +186,7 @@ CREATE TABLE IF NOT EXISTS `#__sppagebuilder_collection_fields` (
   `required` tinyint NOT NULL DEFAULT 0,
   `reference_collection_id` bigint unsigned DEFAULT NULL,
   `is_textarea` tinyint NOT NULL DEFAULT 0,
+  `is_single_location` tinyint NOT NULL DEFAULT 0,
   `show_time` tinyint NOT NULL DEFAULT 0,
   `file_extensions` varchar(300) DEFAULT NULL COMMENT 'Comma separated extensions for file type',
   `number_format` varchar(100) DEFAULT NULL COMMENT 'Available values: decimal, integer. NULL for allow both.',
@@ -275,4 +276,32 @@ CREATE TABLE IF NOT EXISTS `#__sppagebuilder_likes` (
   PRIMARY KEY (`id`),
   FOREIGN KEY (`comment_id`) REFERENCES `#__sppagebuilder_comments`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   KEY `idx_comment_id` (`comment_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `#__sppagebuilder_versions` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `page_id` bigint(20) unsigned NOT NULL,
+  `name` varchar(255) NOT NULL DEFAULT '',
+  `content` mediumtext,
+  `css` longtext NOT NULL,
+  `attribs` varchar(5120) NOT NULL DEFAULT '[]',
+  `og_title` varchar(255) NOT NULL DEFAULT '',
+  `og_image` varchar(255) NOT NULL DEFAULT '',
+  `og_description` varchar(255) NOT NULL DEFAULT '',
+  `note` text,
+  `active` tinyint(1) NOT NULL DEFAULT '0',
+  `created_on` datetime NOT NULL,
+  `created_by` bigint(20) unsigned NOT NULL DEFAULT '0',
+
+  PRIMARY KEY (`id`),
+  KEY `idx_page_id` (`page_id`),
+  KEY `idx_page_created` (`page_id`, `created_on`),
+  KEY `idx_active` (`active`),
+
+  CONSTRAINT `fk_sppagebuilder_versions_page`
+    FOREIGN KEY (`page_id`)
+    REFERENCES `#__sppagebuilder` (`id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

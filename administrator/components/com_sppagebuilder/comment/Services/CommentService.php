@@ -38,14 +38,26 @@ class CommentService
         $this->app = Factory::getApplication();
         $this->model = new Comment();
     }
+
+	public function getArticleId($pageId) {
+		$db = Factory::getDbo();
+		$query = $db->getQuery(true);
+		$query->select('view_id')
+			->from('#__sppagebuilder')
+			->where('id = ' . $pageId)
+			->where('extension_view = ' . $db->quote('article'));
+
+		$db->setQuery($query);
+		return $db->loadResult();
+	}
 	
 	/**
 	 * Get all comments
 	 *
 	 * @return array
 	 */
-    public function getAllComments($itemId = null){
-        $commentData = $this->model->getAllComments($itemId);
+    public function getAllComments($itemId = null, $sourceType = 'articles'){
+        $commentData = $this->model->getAllComments($itemId, $sourceType);
         $formattedComments = $this->getFormattedComments($commentData);
 
 		return $formattedComments;
@@ -57,8 +69,8 @@ class CommentService
 	 * @param int|null $itemId
 	 * @return int
 	 */
-	public function getPublishedCommentsCount(?int $itemId = null): int {
-		return $this->model->getPublishedCommentsCount($itemId);
+	public function getPublishedCommentsCount(?int $itemId = null, $sourceType = 'articles'): int {
+		return $this->model->getPublishedCommentsCount($itemId, $sourceType);
 	}
 
     /**
@@ -101,6 +113,7 @@ class CommentService
              $payload = [
                 'created_by' => $userId ?: null, // Set to null for anonymous comments
                 'item_id' => isset($sanitizedPayload['item_id']) ? $sanitizedPayload['item_id'] : 0,
+				'source_type' => !empty($sanitizedPayload['source_type']) ? $sanitizedPayload['source_type'] : 'articles',
                 'content' => $sanitizedPayload['content'],
                 'likes' => 0,
                 'replies' => 0,
@@ -249,9 +262,9 @@ class CommentService
 		return $roots;
 	}
 
-	private function hasPreviouslyApprovedComment($userId, $itemId): bool
+	private function hasPreviouslyApprovedComment($userId, $itemId, $sourceType = 'articles'): bool
 	{
-		$approvedComments = $this->model->getApprovedComments($userId, $itemId);
+		$approvedComments = $this->model->getApprovedComments($userId, $itemId, $sourceType);
 		return !empty($approvedComments);
 	}
 
@@ -273,7 +286,7 @@ class CommentService
 			} elseif ($key === 'parent_id') {
 				$sanitizedPayload[$key] = ($value === null || $value === '') ? null : (int) $value;
 			} else {
-				$sanitizedPayload[$key] = htmlspecialchars(strip_tags((string) $value), ENT_QUOTES, 'UTF-8');
+				$sanitizedPayload[$key] = trim(htmlspecialchars(strip_tags((string) $value), ENT_QUOTES, 'UTF-8'));
 			}
 		}
 		return $sanitizedPayload;

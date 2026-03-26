@@ -1,7 +1,7 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -56,7 +56,8 @@ class Dispatcher extends ComponentDispatcher
 		// Check the minimum supported PHP version
 		$minPHPVersion = '7.4.0';
 
-		if (version_compare(PHP_VERSION, $minPHPVersion, 'lt')) {
+		if (version_compare(PHP_VERSION, $minPHPVersion, 'lt'))
+		{
 			throw new \RuntimeException(
 				sprintf(
 					'Akeeba Backup requires at least PHP version %s. Your server currently uses PHP version %s. Please upgrade your PHP version.',
@@ -68,7 +69,8 @@ class Dispatcher extends ComponentDispatcher
 		// HHVM made sense in 2013. PHP 7 and later versions are a way better solution than a hybrid PHP interpreter.
 		if (defined('HHVM_VERSION'))
 		{
-			(include_once __DIR__ . '/../../tmpl/commontemplates/hhvm.php') || die('We have detected that you are running HHVM instead of PHP. This software WILL NOT WORK properly on HHVM. Please use PHP 7 or later instead.');
+			(include_once __DIR__ . '/../../tmpl/commontemplates/hhvm.php')
+			|| die('We have detected that you are running HHVM instead of PHP. This software WILL NOT WORK properly on HHVM. Please use PHP 7 or later instead.');
 
 			return;
 		}
@@ -193,11 +195,15 @@ class Dispatcher extends ComponentDispatcher
 	{
 		$jLang = $this->app->getLanguage();
 
-		$jLang->load($this->option, JPATH_BASE, 'en-GB', true, true) ||
-		$jLang->load($this->option, JPATH_ADMINISTRATOR . '/components/com_akeebabackup', 'en-GB', true, true);
+		$jLang->load($this->option, JPATH_BASE, 'en-GB', true, true)
+		|| $jLang->load(
+			$this->option, JPATH_ADMINISTRATOR . '/components/com_akeebabackup', 'en-GB', true, true
+		);
 
-		$jLang->load($this->option, JPATH_BASE, null, true) ||
-		$jLang->load($this->option, JPATH_ADMINISTRATOR . '/components/com_akeebabackup', null, true);
+		$jLang->load($this->option, JPATH_BASE, null, true)
+		|| $jLang->load(
+			$this->option, JPATH_ADMINISTRATOR . '/components/com_akeebabackup', null, true
+		);
 	}
 
 	protected function loadCommonStaticMedia()
@@ -230,7 +236,12 @@ class Dispatcher extends ComponentDispatcher
 
 		$refObj  = new ReflectionObject($waRegistry);
 		$refProp = $refObj->getProperty('assets');
-		$refProp->setAccessible(true);
+
+		if (version_compare(PHP_VERSION, '8.1.0', 'lt'))
+		{
+			$refProp->setAccessible(true);
+		}
+
 		$registeredAssets = $refProp->getValue($waRegistry);
 
 
@@ -250,7 +261,12 @@ class Dispatcher extends ComponentDispatcher
 
 				$refAI      = new ReflectionObject($assetItem);
 				$refVersion = $refAI->getProperty('version');
-				$refVersion->setAccessible(true);
+
+				if (version_compare(PHP_VERSION, '8.1.0', 'lt'))
+				{
+					$refVersion->setAccessible(true);
+				}
+
 				$refVersion->setValue($assetItem, $akeebaMediaVersion);
 
 				$temp[$key] = $assetItem;

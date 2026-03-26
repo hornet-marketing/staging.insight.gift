@@ -104,6 +104,8 @@ $deviceList = array_filter(AddonHelper::$deviceList, function ($size) {
 $background_image = (isset($options->background_image) && $options->background_image) ? $options->background_image : '';
 $background_image_src = isset($background_image->src) ? $background_image->src : $background_image;
 
+$backgroundRepeat = $backgroundSize = $backgroundAttachment = $backgroundPosition = false;
+
 if (property_exists($options, 'background_type') && isset($options->background_type)) {
 	if (($options->background_type == 'image' || $options->background_type == 'color') && isset($options->background_color) && $options->background_color) $style .= 'background-color:' . $options->background_color . ';';
 
@@ -127,10 +129,47 @@ if (property_exists($options, 'background_type') && isset($options->background_t
 			}
 		}
 
-		if (isset($options->background_repeat) && $options->background_repeat) $style .= 'background-repeat:' . $options->background_repeat . ';';
-		if (isset($options->background_size) && $options->background_size && $options->background_size != 'custom') $style .= 'background-size:' . $options->background_size . ';';
-		if (isset($options->background_attachment) && $options->background_attachment) $style .= 'background-attachment:' . $options->background_attachment . ';';
-		if (isset($options->background_position) && $options->background_position && $options->background_position != 'custom') $style .= 'background-position:' . $options->background_position . ';';
+		if (isset($options->background_repeat) && $options->background_repeat){
+			if(is_object($options->background_repeat)){
+				$backgroundRepeat = AddonHelper::generateMultiDeviceObject($options, 'background_repeat', 'background-repeat', $device, false, false);
+				$styleX .= $backgroundRepeat->$device;
+				$style .= $backgroundRepeat->$device;
+			} else {
+				$style .= 'background-repeat:' . ($options->background_repeat ?? 'no-repeat') . ';';
+			}
+		}
+		if (isset($options->background_size) && $options->background_size){
+			if(is_object($options->background_size)){
+				$backgroundSize = AddonHelper::generateMultiDeviceObject($options, 'background_size', 'background-size', $device, false, false);
+				$styleX .= $backgroundSize->$device;
+				$style .= $backgroundSize->$device;
+			} else {
+				if ($options->background_size != 'custom') {
+					$style .= 'background-size:' . ($options->background_size ?? 'cover') . ';';
+				}
+			}
+		}
+		if (isset($options->background_attachment) && $options->background_attachment){
+			if(is_object($options->background_attachment)){
+				$backgroundAttachment = AddonHelper::generateMultiDeviceObject($options, 'background_attachment', 'background-attachment', $device, false, false);
+				$styleX .= $backgroundAttachment->$device;
+				$style .= $backgroundAttachment->$device;
+			} else {
+				$style .= 'background-attachment:' . ($options->background_attachment ?? 'fixed') . ';';
+			}
+		}
+		if (isset($options->background_position) && $options->background_position){
+			if(is_object($options->background_position)){
+				$backgroundPosition = AddonHelper::generateMultiDeviceObject($options, 'background_position', 'background-position', $device, false, false);
+				$styleX .= $backgroundPosition->$device;
+				$style .= $backgroundPosition->$device;
+			} else {
+				if ($options->background_position != 'custom') {
+					$style .= 'background-position:' . ($options->background_position ?? 'left-top') . ';';
+				}
+			}
+		}
+
 
 		if (isset($options->background_size) && $options->background_size == 'custom') {
 			if (isset($options->background_size_custom) && \is_object($options->background_size_custom)) {
@@ -247,38 +286,54 @@ $rowIdSelector 		= '.sp-page-builder .page-content #' . $row_id;
 $backgroundSize 	= $backgroundSize ?? false;
 $backgroundPosition = $backgroundPosition ?? false;
 
-
 $mediaStyle = array_map(function ($size) use (
 	$rowIdSelector,
 	$backgroundSize,
-	$backgroundPosition
+	$backgroundPosition,
+	$backgroundRepeat,
+	$backgroundAttachment
 ) {
 	$str = '';
 	$str .= AddonHelper::mediaQuery($size);
 
+	$getVal = function ($var, $key) {
+		if (empty($var)) {
+			return '';
+		}
+		if (is_object($var)) {
+			return isset($var->$key) ? $var->$key : '';
+		}
+		if (is_array($var)) {
+			return isset($var[$key]) ? $var[$key] : '';
+		}
+		return '';
+	};
+
 	$str .= $rowIdSelector . '{';
-	$str .= !empty($backgroundSize) ? $backgroundSize->$size : '';
-	$str .= !empty($backgroundPosition) ? $backgroundPosition->$size : '';
+	$str .= $getVal($backgroundSize, $size);
+	$str .= $getVal($backgroundPosition, $size);
+	$str .= $getVal($backgroundRepeat, $size);
+	$str .= $getVal($backgroundAttachment, $size);
 	$str .= '}';
 	$str .= '}';
 
 	return $str;
 }, $deviceList);
 
+$mediaStyle = implode("\n", $mediaStyle);
 
 if ($styleX) {
 	$row_styles .= '.sp-page-builder .page-content #' . $row_id . '{' . $styleX . '}';
-}
-$mediaStyle = implode("\n", $mediaStyle);
-
-if ($mediaStyle) {
-	$row_styles .= $mediaStyle;
 }
 
 if ($style) {
 	$row_styles .= '.sp-page-builder .page-content #' . $row_id . '{' . $style . '}';
 	$row_styles .= '.sp-page-builder .page-content #' . $row_id . '{' . $placeholder_bg_image . '}';
 	$row_styles .= '.sp-page-builder .page-content #' . $row_id . '.sppb-element-loaded {' . $lazy_bg_image . '}';
+}
+
+if ($mediaStyle) {
+	$row_styles .= $mediaStyle;
 }
 
 $row_styles .= $sectionStyle;

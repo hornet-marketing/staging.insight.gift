@@ -4,7 +4,7 @@
  *
  * An abstraction layer for easier implementation of WebPush in Joomla components.
  *
- * @copyright Copyright (c) 2022-2025 Akeeba Ltd
+ * @copyright Copyright (c) 2022-2026 Akeeba Ltd
  * @license   GNU GPL v3 or later; see LICENSE.txt
  *
  * This program is free software: you can redistribute it and/or modify

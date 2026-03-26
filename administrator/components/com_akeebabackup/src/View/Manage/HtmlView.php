@@ -1,7 +1,7 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -16,6 +16,7 @@ use Akeeba\Component\AkeebaBackup\Administrator\Mixin\ViewTableUITrait;
 use Akeeba\Component\AkeebaBackup\Administrator\Mixin\ViewToolbarTrait;
 use Akeeba\Component\AkeebaBackup\Administrator\Model\ProfilesModel;
 use Akeeba\Component\AkeebaBackup\Administrator\Model\StatisticsModel;
+use Akeeba\Component\AkeebaBackup\Administrator\Model\TransferModel;
 use Akeeba\Engine\Factory as AkeebaFactory;
 use Akeeba\Engine\Platform;
 use Joomla\CMS\Component\ComponentHelper;
@@ -625,26 +626,15 @@ class HtmlView extends BaseHtmlView
 			];
 		}
 
-		if ($model->getState('filter.frozen') == 1)
-		{
-			$filters[] = [
-				'field'   => 'frozen',
-				'operand' => '=',
-				'value'   => 1,
-			];
-		}
-		elseif ($model->getState('filter.frozen') == 2)
-		{
-			$filters[] = [
-				'field'   => 'frozen',
-				'operand' => '=',
-				'value'   => 0,
-			];
-		}
+		$filterFrozen = $model->getState('filter.frozen');
 
-		if (empty($filters))
+		if (is_numeric($filterFrozen))
 		{
-			$filters = null;
+			$filters[] = [
+				'field'   => 'frozen',
+				'operand' => '=',
+				'value'   => intval($filterFrozen) === 2 ? 0 : 1,
+			];
 		}
 
 		return $filters;

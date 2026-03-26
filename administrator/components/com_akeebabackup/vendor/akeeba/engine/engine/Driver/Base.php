@@ -3,7 +3,7 @@
  * Akeeba Engine
  *
  * @package   akeebaengine
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright (c)2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License version 3, or later
  *
  * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
@@ -1213,6 +1213,19 @@ abstract class Base
 
 			return $fin;
 		}
+	}
+
+	/**
+	 * Quote a value as a hex string.
+	 *
+	 * @param   string  $text  The value to quote as hex.
+	 *
+	 * @return  string  The hex-quoted value.
+	 * @since   10.3
+	 */
+	public function quoteHex(string $text): string
+	{
+		return "x'" . bin2hex($text) . "'";
 	}
 
 	/**

@@ -111,6 +111,7 @@ $row_settings = [
                         'inherit' => Text::_('COM_SPPAGEBUILDER_GLOBAL_INHERIT'),
                     ],
                     'std' => 'no-repeat',
+                    'responsive' => true,
                     'depends' => [
                         ['background_type', '=', 'image'],
                         ['background_image', '!=', '']
@@ -128,6 +129,7 @@ $row_settings = [
                         'custom' => Text::_('COM_SPPAGEBUILDER_GLOBAL_CUSTOM'),
                     ],
                     'std' => 'cover',
+                    'responsive' => true,
                     'depends' => [
                         ['background_type', '=', 'image'],
                         ['background_image', '!=', '']
@@ -159,6 +161,7 @@ $row_settings = [
                         'inherit' => Text::_('COM_SPPAGEBUILDER_GLOBAL_INHERIT'),
                     ],
                     'std' => 'fixed',
+                    'responsive' => true,
                     'depends' => [
                         ['background_type', '=', 'image'],
                         ['background_image', '!=', '']
@@ -181,6 +184,7 @@ $row_settings = [
                         'custom' => Text::_('COM_SPPAGEBUILDER_GLOBAL_CUSTOM'),
                     ],
                     'std' => '0 0',
+                    'responsive' => true,
                     'depends' => [
                         ['background_type', '=', 'image'],
                         ['background_image', '!=', '']

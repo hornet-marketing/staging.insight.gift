@@ -29,6 +29,18 @@ SpAddonsConfig::addonConfig([
                     'title'  => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_SOURCE_TITLE'),
                     'desc'   => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_SOURCE_DESC'),
                 ],
+                'divider_1' => [
+                    'type' => 'separator',
+                ],
+                'sorting_field_id' => [
+                    'type'   => 'dynamic_field',
+                    'title'  => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_FIELD_SOURCE_TITLE'),
+                    'desc'   => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_FIELD_SOURCE_DESC'),
+                    'excluded_types' => ['image', 'file', 'reference', 'multi-reference', 'gallery', 'switch', 'option', 'video'],
+                    'augmentations' => [['label' => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_SORTING_DEFAULT'), 'value' => 'default']],
+                    'is_clearable' => false,
+                    'std' => 'default'
+                ],
                 'direction' => [
                     'type' => 'buttons',
                     'title' => Text::_('COM_SPPAGEBUILDER_ADDON_DYNAMIC_CONTENT_COLLECTION_SORTING_TITLE'),
@@ -39,6 +51,9 @@ SpAddonsConfig::addonConfig([
                     ],
                     'std' => 'asc',
                     'is_clearable' => false,
+                ],
+                'divider_2' => [
+                    'type' => 'separator',
                 ],
                 'filters' => [
                     'type' => 'filter',

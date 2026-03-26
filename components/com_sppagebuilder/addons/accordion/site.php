@@ -42,6 +42,9 @@ class SppagebuilderAddonAccordion extends SppagebuilderAddons
 
 		if (isset($settings->sp_accordion_item) && is_array($settings->sp_accordion_item) && count($settings->sp_accordion_item)) {
 			foreach ($settings->sp_accordion_item as $key => $item) {
+				if (isset($item->item_visibility) && !$item->item_visibility) {
+					continue;
+				}
 				$item_title = (isset($item->title) && $item->title) ? ' ' . $item->title . ' ' : '';
 				$visual_item_type = (isset($item->visual_item_type) && $item->visual_item_type) ? $item->visual_item_type : 'icon';
 				$image = (isset($item->image) && $item->image) ? $item->image : '';
@@ -62,7 +65,7 @@ class SppagebuilderAddonAccordion extends SppagebuilderAddons
 
 					$output  .= '<span class="sppb-accordion-icon-wrap" aria-label="' . trim(strip_tags($item_title)) . '">';
 
-					$output  .= '<img class="sppb-accordion-image" src="' . $image_src . '" alt="' . $imageAlt .  '>';
+					$output  .= '<img class="sppb-accordion-image" src="' . $image_src . '" alt="' . $imageAlt .  '">';
 
 					$output  .= '</span>'; 
 				}

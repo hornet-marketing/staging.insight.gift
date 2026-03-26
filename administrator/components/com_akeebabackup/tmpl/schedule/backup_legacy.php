@@ -1,7 +1,7 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -176,7 +176,7 @@ curl_setopt($curl_handle,CURLOPT_FOLLOWLOCATION, TRUE);
 curl_setopt($curl_handle,CURLOPT_MAXREDIRS, 10000);
 curl_setopt($curl_handle,CURLOPT_RETURNTRANSFER, 1);
 $buffer = curl_exec($curl_handle);
-curl_close($curl_handle);
+if (version_compare(PHP_VERSION, '8.5.0', 'lt')) curl_close($curl_handle);
 if (empty($buffer))
   echo "Sorry, the backup didn't work.";
 else

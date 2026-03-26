@@ -37,6 +37,11 @@ SpAddonsConfig::addonConfig([
                                     'std'   => 'Button'
                                 ],
 
+                                'item_visibility' => [
+                                    'type' => 'visibility',
+                                    'std'  => true,
+                                ],
+
                                 'url' => [
                                     'type'         => 'link',
                                     'link_popup'   => true,

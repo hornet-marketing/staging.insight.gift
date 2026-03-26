@@ -1,7 +1,7 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -301,9 +301,10 @@ class UpgradeModel extends BaseModel implements DatabaseAwareInterface
 	/** @var string[] Included extensions to automatically publish on NEW INSTALLATION OR UPGRADE */
 	private const ALWAYS_ENABLE_EXTENSIONS = [
 		'plg_console_akeebabackup',
+		'plg_pagecache_akeebabackup',
+		'plg_system_akwarn',
 		'plg_task_akeebabackup',
 		'plg_webservices_akeebabackup',
-		'plg_pagecache_akeebabackup',
 	];
 
 	/** @var string[] Extensions to always uninstall if they are still installed (runs on install and upgrade) */

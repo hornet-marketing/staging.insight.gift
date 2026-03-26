@@ -87,7 +87,7 @@ class SppagebuilderAddonImage_carousel extends SppagebuilderAddons
         }
 
         //Output
-        $output  = '<div class="sppb-addon sppb-carousel-extended' . $class . ' sppb-image-carousel-' . $image_carousel_layout . '" data-left-arrow="' . $left_arrow . '" data-right-arrow="' . $right_arrow . '" data-arrow="' . $carousel_arrow . '" data-dots="' . $carousel_bullet . '" data-image-layout="' . $image_carousel_layout . '" data-autoplay="' . $carousel_autoplay . '" data-speed="' . $carousel_speed . '" data-interval="' . $carousel_interval . '" 
+        $output  = '<div'.($image_carousel_layout === 'layout3' || $image_carousel_layout === 'layout4' ? ' data-is-image-layout="true"' : '') . ' class="sppb-addon sppb-carousel-extended' . $class . ' sppb-image-carousel-' . $image_carousel_layout . '" data-left-arrow="' . $left_arrow . '" data-right-arrow="' . $right_arrow . '" data-arrow="' . $carousel_arrow . '" data-dots="' . $carousel_bullet . '" data-image-layout="' . $image_carousel_layout . '" data-autoplay="' . $carousel_autoplay . '" data-speed="' . $carousel_speed . '" data-interval="' . $carousel_interval . '" 
         data-margin-xl="' . $carousel_margin_xl . '"
 		data-margin-lg="' . $carousel_margin_lg . '"
 		data-margin-md="' . $carousel_margin_md . '"
@@ -105,6 +105,10 @@ class SppagebuilderAddonImage_carousel extends SppagebuilderAddons
 
             foreach ($settings->sp_image_carousel_item as $item_key => $carousel_item)
             {
+                if(isset($carousel_item->item_visibility) && !$carousel_item->item_visibility){
+                    continue;
+                }
+
                 $output .= '<div class="sppb-carousel-extended-item">';
 
 
@@ -616,6 +620,10 @@ class SppagebuilderAddonImage_carousel extends SppagebuilderAddons
 					data.sp_image_carousel_item = _.shuffle(data.sp_image_carousel_item);
 				}
                     _.each(data.sp_image_carousel_item, function(carousel_item){
+
+                        if(carousel_item.item_visibility !== undefined && !carousel_item.item_visibility){
+                            return;
+                        }
                     
                         var carouselImg = {}
                         if (typeof carousel_item.image_carousel_img !== "undefined" && typeof carousel_item.image_carousel_img.src !== "undefined") {

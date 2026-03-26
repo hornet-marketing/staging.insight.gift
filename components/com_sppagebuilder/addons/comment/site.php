@@ -31,28 +31,41 @@ class SppagebuilderAddonComment extends SppagebuilderAddons
 	 */
 	public function render()
 	{
-		if (!\class_exists('SppagebuilderHelperArticles')) {
-			require_once JPATH_ROOT . '/components/com_sppagebuilder/helpers/articles.php';
-		}
-		$articleId = Factory::getApplication()->input->get('collection_item_id', null, 'array');
-		$articleId = $articleId ? $articleId[0] : null;
-		$authorised = \SppagebuilderHelperArticles::checkAuthorised($articleId);
+		$input = Factory::getApplication()->input;
+		$collectionType = $input->get('collection_type', null, 'string');
 
-		if (!$authorised) {
-			return "";
+		$viewType = $input->get('view', null, 'string');
+
+		$articleId = $input->get('id', null, 'int');
+
+		if ($collectionType === 'articles') {
+			if (!\class_exists('SppagebuilderHelperArticles')) {
+				require_once JPATH_ROOT . '/components/com_sppagebuilder/helpers/articles.php';
+			}
+			$articleId = Factory::getApplication()->input->get('collection_item_id', null, 'array');
+			$articleId = $articleId ? $articleId[0] : null;
+			$authorised = \SppagebuilderHelperArticles::checkAuthorised($articleId);
+	
+			if (!$authorised) {
+				return "";
+			}
 		}
 
 		$commentService = new CommentService();
-		$input = Factory::getApplication()->input;
-		$collectionType = $input->get('collection_type', null, 'string');
+		if ($viewType == 'page') {
+			$articleId = $commentService->getArticleId($articleId);
+		}
 		$itemId = $input->get('collection_item_id', null, 'array');
 		$itemId = $itemId ? $itemId[0] : null;
 
-		if ($collectionType != 'articles') {
+		$itemId = $itemId ? $itemId : $articleId;
+
+		if (($collectionType != 'articles' && $collectionType != 'normal-source') && empty($itemId)) {
 			return "";
 		}
-		$comments = $commentService->getAllComments($itemId);
-		$publishedCommentsCount = $commentService->getPublishedCommentsCount($itemId);
+		$collectionType = $collectionType ? $collectionType : 'articles';
+		$comments = $commentService->getAllComments($itemId, $collectionType);
+		$publishedCommentsCount = $commentService->getPublishedCommentsCount($itemId, $collectionType);
 		$addonId = $this->addon->id;
 
 		$settings = $this->addon->settings;
@@ -150,10 +163,10 @@ class SppagebuilderAddonComment extends SppagebuilderAddons
 		$words = explode(' ', trim($name));
 		$initials = '';
 		if (count($words) > 1) {
-			$initials .= strtoupper(substr($words[0], 0, 1));
-			$initials .= strtoupper(substr(end($words), 0, 1));
+			$initials .= mb_strtoupper(mb_substr($words[0], 0, 1, 'UTF-8'), 'UTF-8');
+			$initials .= mb_strtoupper(mb_substr(end($words), 0, 1, 'UTF-8'), 'UTF-8');
 		} else {
-			$initials .= strtoupper(substr($name, 0, 1));
+			$initials .= mb_strtoupper(mb_substr($name, 0, 1, 'UTF-8'), 'UTF-8');
 		}
 		return $initials;
 	}
@@ -247,21 +260,21 @@ class SppagebuilderAddonComment extends SppagebuilderAddons
 
 			if (!empty($profileImageUrl)) {
 				$output .= '<div class="sppb-comment-avatar" style="border-radius: 50%; width: 45px; height: 45px; margin-right: 10px; overflow: hidden; flex-shrink: 0;">';
-				$output .= '<img src="' . $profileImageUrl . '" alt="' . htmlspecialchars($comment->created_by ?? 'Anonymous Person') . '" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';" />';
+				$output .= '<img src="' . htmlspecialchars($profileImageUrl, ENT_QUOTES, 'UTF-8') . '" alt="' . htmlspecialchars($comment->created_by ?? 'Anonymous Person', ENT_QUOTES, 'UTF-8') . '" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';" />';
 				$output .= '<div class="sppb-comment-avatar-fallback" style="background-color: ' . $avatarColor . '; padding: 10px; border-radius: 50%; width: 45px; height: 45px; display: none; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; color: ' . $textColor . '">';
-				$output .= '<span>' . $initials . '</span>';
+				$output .= '<span>' . htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') . '</span>';
 				$output .= '</div>';
 				$output .= '</div>';
 			} elseif (!empty($gravatarUrl)) {
 				$output .= '<div class="sppb-comment-avatar" style="border-radius: 50%; width: 45px; height: 45px; margin-right: 10px; overflow: hidden; flex-shrink: 0;">';
-				$output .= '<img src="' . $gravatarUrl . '" alt="' . htmlspecialchars($comment->created_by ?? 'Anonymous Person') . '" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';" />';
+				$output .= '<img src="' . htmlspecialchars($gravatarUrl, ENT_QUOTES, 'UTF-8') . '" alt="' . htmlspecialchars($comment->created_by ?? 'Anonymous Person', ENT_QUOTES, 'UTF-8') . '" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';" />';
 				$output .= '<div class="sppb-comment-avatar-fallback" style="background-color: ' . $avatarColor . '; padding: 10px; border-radius: 50%; width: 45px; height: 45px; display: none; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; color: ' . $textColor . '">';
-				$output .= '<span>' . $initials . '</span>';
+				$output .= '<span>' . htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') . '</span>';
 				$output .= '</div>';
 				$output .= '</div>';
 			} else {
 				$output .= '<div class="sppb-comment-avatar" style="background-color: ' . $avatarColor . '; padding: 10px; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; font-weight: 600; margin-right: 10px; color: ' . $textColor . '">';
-				$output .= '<span>' . $initials . '</span>';
+				$output .= '<span>' . htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') . '</span>';
 				$output .= '</div>';
 			}
 			$output .= '<div class="sppb-comment-header-left">';
@@ -289,10 +302,10 @@ class SppagebuilderAddonComment extends SppagebuilderAddons
 			}
 
 			$output .= '<span class="sppb-comment-content-text' . ($needsModeration ? ' sppb-comment-unpublished' : '') . '" style="margin-left: 10px; margin-top: 20px; display: inline-block;">';
-			$output .= '<span>' . nl2br($comment->content) . '</span>';
+			$output .= '<span>' . nl2br(htmlspecialchars($comment->content, ENT_QUOTES, 'UTF-8')) . '</span>';
 			$output .= '</span>';
 			$output .= '<div class="sppb-comment-edit-form sppb-comment-form" data-comment-id="' . $comment->id . '" style="display: none; ' . ($needsModeration ? 'margin-top: -45px;' : '') . '">';
-			$output .= '<textarea type="text" class="sppb-comment-edit-input sppb-comment-field" data-comment-id="' . $comment->id . '">' . $comment->content . '</textarea>';
+			$output .= '<textarea type="text" class="sppb-comment-edit-input sppb-comment-field" data-comment-id="' . $comment->id . '">' . htmlspecialchars($comment->content, ENT_QUOTES, 'UTF-8') . '</textarea>';
 			$output .= $this->renderEditCommentButtons($settings, $comment->id);
 			$output .= '</div>';
 
@@ -901,16 +914,29 @@ class SppagebuilderAddonComment extends SppagebuilderAddons
 		$js = '';
 		$input = Factory::getApplication()->input;
 		$collectionType = $input->get('collection_type', null, 'string');
+		$viewType = $input->get('view', null, 'string');
+		$articleId = $input->get('id', null, 'int');
+		$commentService = new CommentService();
+		if ($viewType == 'page') {
+			$articleId = $commentService->getArticleId($articleId);
+		}
 		$itemId = $input->get('collection_item_id', null, 'array');
 		$itemId = $itemId ? $itemId[0] : null;
-		if ($collectionType != 'articles') {
+		$itemId = $itemId ? $itemId : $articleId;
+		if (($collectionType != 'articles' && $collectionType != 'normal-source') && empty($itemId)) {
 			return "";
 		}
+		$collectionType = $collectionType ? $collectionType : 'articles';
 		$avatarColor = !empty($this->addon->settings->commentator_avatar_color) ? $this->addon->settings->commentator_avatar_color : "#4285F4";
 		$currentUserId = Factory::getUser()->id;
 
 		$js .= '
-		// It processes comment submissions, updates, and deletions, and returns JSON responses.
+		
+		const escapeHtml = (text) => {
+			const div = document.createElement(\'div\');
+			div.textContent = text;
+			return div.innerHTML;
+		};
 
 		document.addEventListener("DOMContentLoaded", function() {
 			// Handle Gravatar image loading and fallback
@@ -989,6 +1015,7 @@ class SppagebuilderAddonComment extends SppagebuilderAddons
 						comment: {
 							content: commentContent,
 							item_id: ' . $itemId . ',
+							source_type: "'. $collectionType .'",
 							parent_id: null,
 							enable_anonymous_comment: enableAnonymousComment
 						}
@@ -1115,6 +1142,7 @@ class SppagebuilderAddonComment extends SppagebuilderAddons
 						content: replyContent,
 						item_id: ' . $itemId . ',
 						parent_id: commentId,
+						source_type: "'. $collectionType .'",
 						enable_anonymous_comment: enableAnonymousComment
 					}
 				};
@@ -1231,7 +1259,7 @@ class SppagebuilderAddonComment extends SppagebuilderAddons
 							$commentItem.find(".sppb-comment-header .sppb-comment-ellipsis-action").show();
 							$commentItem.find(".sppb-comment-content").show();
 							
-							const formattedContent = commentContent.replace(/\\n/g, \'<br>\');
+							const formattedContent = escapeHtml(commentContent).replace(/\\n/g, \'<br>\');
 							$contentTextWrapper.show();
 							$contentText.html(formattedContent);
 						} else {
@@ -1639,7 +1667,7 @@ class SppagebuilderAddonComment extends SppagebuilderAddons
 				const marginTop = \'-4px\';
 				const contentMarginLeft = level > 0 ? \'style="margin-left: 0; margin-top: 11px;"\' : \'\';
 				
-				const formattedContent = commentRecord.content.replace(/\\n/g, \'<br>\');
+				const formattedContent = escapeHtml(commentRecord.content).replace(/\\n/g, \'<br>\');
 
 				// Build HTML in parts to avoid string concatenation issues
 				const htmlParts = [];
@@ -1656,9 +1684,9 @@ class SppagebuilderAddonComment extends SppagebuilderAddons
 				// Avatar section with profile image, Gravatar, and fallback logic
 				if (commentRecord.profile_image) {
 					htmlParts.push(\'<div class="sppb-comment-avatar" style="border-radius: 50%; width: 45px; height: 45px; margin-right: 10px; overflow: hidden; flex-shrink: 0;">\');
-					htmlParts.push(\'<img src="\' + commentRecord.profile_image + \'" alt="\' + commentatorName + \'" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display=\\\'none\\\'; this.nextElementSibling.style.display=\\\'flex\\\';" />\');
+					htmlParts.push(\'<img src="\' + escapeHtml(commentRecord.profile_image) + \'" alt="\' + escapeHtml(commentatorName) + \'" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display=\\\'none\\\'; this.nextElementSibling.style.display=\\\'flex\\\';" />\');
 					htmlParts.push(\'<div class="sppb-comment-avatar-fallback" style="background-color: \' + avatarColor + \'; padding: 10px; border-radius: 50%; width: 45px; height: 45px; display: none; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; color: \' + textColor + \'">\');
-					htmlParts.push(\'<span>\' + initials + \'<\/span>\');
+					htmlParts.push(\'<span>\' + escapeHtml(initials) + \'<\/span>\');
 					htmlParts.push(\'<\/div>\');
 					htmlParts.push(\'<\/div>\');
 				} else if (' . (!empty($this->addon->settings->enable_gravatar) ? 'true' : 'false') . ' && commentRecord.created_by_email) {
@@ -1666,22 +1694,22 @@ class SppagebuilderAddonComment extends SppagebuilderAddons
 					const gravatarHash = md5(commentRecord.created_by_email.toLowerCase().trim());
 					const gravatarUrl = \'https://www.gravatar.com/avatar/\' + gravatarHash + \'?s=90&d=404\';
 					htmlParts.push(\'<div class="sppb-comment-avatar" style="border-radius: 50%; width: 45px; height: 45px; margin-right: 10px; overflow: hidden; flex-shrink: 0;">\');
-					htmlParts.push(\'<img src="\' + gravatarUrl + \'" alt="\' + commentatorName + \'" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display=\\\'none\\\'; this.nextElementSibling.style.display=\\\'flex\\\';" />\');
+					htmlParts.push(\'<img src="\' + gravatarUrl + \'" alt="\' + escapeHtml(commentatorName) + \'" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display=\\\'none\\\'; this.nextElementSibling.style.display=\\\'flex\\\';" />\');
 					htmlParts.push(\'<div class="sppb-comment-avatar-fallback" style="background-color: \' + avatarColor + \'; padding: 10px; border-radius: 50%; width: 45px; height: 45px; display: none; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; color: \' + textColor + \'">\');
-					htmlParts.push(\'<span>\' + initials + \'<\/span>\');
+					htmlParts.push(\'<span>\' + escapeHtml(initials) + \'<\/span>\');
 					htmlParts.push(\'<\/div>\');
 					htmlParts.push(\'<\/div>\');
 				} else {
 					// Fallback to initials only
 					htmlParts.push(\'<div class="sppb-comment-avatar" style="background-color: \' + avatarColor + \'; padding: 10px; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; font-weight: 600; margin-right: 10px; color: \' + textColor + \'">\');
-					htmlParts.push(\'<span>\' + initials + \'<\/span>\');
+					htmlParts.push(\'<span>\' + escapeHtml(initials) + \'<\/span>\');
 					htmlParts.push(\'<\/div>\');
 				}
 				
 				// Header left content
 				htmlParts.push(\'<div class="sppb-comment-header-left">\');
 				htmlParts.push(\'<div class="commentator-name-wrapper">\');
-				htmlParts.push(\'<span class="commentator-name">\' + commentatorName + \'<\/span>\');
+				htmlParts.push(\'<span class="commentator-name">\' + escapeHtml(commentatorName) + \'<\/span>\');
 				htmlParts.push(\'<\/div>\');
 				htmlParts.push(\'<div class="sppb-comment-time-wrapper">\');
 				htmlParts.push(\'<span class="sppb-comment-time">\' + createdTime + editedTime + \'<\/span>\');
@@ -1712,7 +1740,7 @@ class SppagebuilderAddonComment extends SppagebuilderAddons
 				
 				// Edit form
 				htmlParts.push(\'<div class="sppb-comment-edit-form sppb-comment-form" data-comment-id="\' + commentRecord.id + \'" style="display: none; \' + (needsModeration ? \'margin-top: -45px;\' : \'\') + \'">\');
-				htmlParts.push(\'<textarea type="text" class="sppb-comment-edit-input sppb-comment-field" data-comment-id="\' + commentRecord.id + \'">\' + commentRecord.content + \'<\/textarea>\');
+				htmlParts.push(\'<textarea type="text" class="sppb-comment-edit-input sppb-comment-field" data-comment-id="\' + commentRecord.id + \'">\' + escapeHtml(commentRecord.content) + \'<\/textarea>\');
 				htmlParts.push(generateEditCommentButtons());
 				htmlParts.push(\'<\/div>\');
 				

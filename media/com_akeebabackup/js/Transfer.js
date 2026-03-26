@@ -1,6 +1,6 @@
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 "use strict";
@@ -406,8 +406,9 @@ akeebabackup.Transfer.uploadArchive = function (start)
             document.getElementById("akeeba-transfer-upload-area-kickstart").style.display = "";
             document.getElementById("akeeba-transfer-upload-area-upload").style.display    = "none";
 
-            var urlBox = document.getElementById("akeeba-transfer-url");
-            var url    = urlBox.value.replace(/\/$/, "") + "/kickstart.php";
+            const kickstartName = Joomla.getOptions("akeebabackup.transfer")?.randomName ?? "kickstart.php";
+            const urlBox        = document.getElementById("akeeba-transfer-url");
+            const url           = urlBox.value.replace(/\/$/, "") + "/" + kickstartName;
 
             document.getElementById("akeeba-transfer-upload-btn-kickstart").setAttribute("href", url);
 

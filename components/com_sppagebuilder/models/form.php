@@ -452,7 +452,7 @@ class SppagebuilderModelForm extends SppagebuilderModelPage
 			$data['catid'] = 0;
 		}
 
-		$data['view_id'] = $data['view_id'] ?: 0;
+		$data['view_id'] = !empty($data['view_id']) ? $data['view_id'] : 0;
 		$data = (object) $data;
 
 		if (empty($id))

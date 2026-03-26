@@ -1,7 +1,7 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -158,9 +158,20 @@ class StatisticModel extends AdminModel
 				throw new RuntimeException($error);
 			}
 
-			if (!$this->deleteFiles($id))
+			$ref = [$id];
+
+			if (!$this->deleteFiles($ref))
 			{
 				throw new RuntimeException(Text::_('COM_AKEEBABACKUP_BUADMIN_ERR_CANNOT_DELETE_ARCHIVES'));
+			}
+
+			try
+			{
+				$ref = @intval($id);
+			}
+			catch (\Throwable $e)
+			{
+				throw new RuntimeException(Text::_('COM_AKEEBABACKUP_BUADMIN_ERROR_INVALIDID'));
 			}
 
 			if (!$table->delete($id))

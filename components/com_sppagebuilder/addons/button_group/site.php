@@ -33,6 +33,9 @@ class SppagebuilderAddonButton_group extends SppagebuilderAddons
 
 		if (isset($this->addon->settings->sp_button_group_item) && count((array) $this->addon->settings->sp_button_group_item)) {
 			foreach ($this->addon->settings->sp_button_group_item as $key => $value) {
+				if(isset($value->item_visibility) && !$value->item_visibility) {
+					continue;
+				}
 				if ($value->title || $value->icon) {
 					list($link, $target) = AddonHelper::parseLink($value, 'url', [
 						'new_tab' => 'target',
@@ -291,6 +294,9 @@ class SppagebuilderAddonButton_group extends SppagebuilderAddons
 			<div class="sppb-addon-content">
 				<#
 				 _.each(data.sp_button_group_item, function(button, key){
+					if(typeof button.item_visibility !== "undefined" && !button.item_visibility){
+						return;
+					}
 					var classList = button.class;
 					classList += " sppb-btn-"+button.type;
 					classList += " sppb-btn-"+button?.size;

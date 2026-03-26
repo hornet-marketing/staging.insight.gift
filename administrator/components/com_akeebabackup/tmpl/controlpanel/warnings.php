@@ -1,7 +1,7 @@
 <?php
 /**
  * @package   akeebabackup
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
  */
 
@@ -16,11 +16,6 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
-
-if (version_compare(JVERSION, '4.999.999', 'lt'))
-{
-	$this->loadAnyTemplate('Controlpanel/joomla_eol');
-}
 
 $cloudFlareTestFile = 'CLOUDFLARE::' . Uri::base() . 'media/com_akeebabackup/ControlPanel.min.js';
 $cloudFlareTestFile .= '?' . ApplicationHelper::getHash(AKEEBABACKUP_VERSION . AKEEBABACKUP_DATE);

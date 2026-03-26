@@ -1,25 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--~
   ~ @package   akeebabackup
-  ~ @copyright Copyright (c)2006-2024 Nicholas K. Dionysopoulos / Akeeba Ltd
+  ~ @copyright Copyright 2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
   ~ @license   GNU General Public License version 3, or later
   -->
 
 <extension type="component" method="upgrade">
     <name>com_akeebabackup</name>
     <author>Akeeba Ltd</author>
-    <creationDate>2025-09-01</creationDate>
+    <creationDate>2026-03-06</creationDate>
     <copyright>Copyright (c)2006-2025 Akeeba Ltd / Nicholas K. Dionysopoulos</copyright>
     <license>GNU General Public License version 3 or later; see LICENSE.txt</license>
     <authorEmail>no-reply@akeeba.com</authorEmail>
     <authorUrl>www.akeeba.com</authorUrl>
-    <version>10.0.6</version>
+    <version>10.3.2</version>
     <description>COM_AKEEBABACKUP_XML_DESCRIPTION</description>
     <namespace path="src">Akeeba\Component\AkeebaBackup</namespace>
 
     <files folder="frontend">
         <folder>language</folder>
         <folder>src</folder>
+        <folder>tmpl</folder>
     </files>
 
     <languages folder="frontend">
@@ -32,7 +33,7 @@
         <folder>icons</folder>
         <folder>js</folder>
 
-	    <filename>joomla.asset.json</filename>
+        <filename>joomla.asset.json</filename>
     </media>
 
     <administration>
@@ -64,8 +65,10 @@
             <filename>access.xml</filename>
             <filename>CHANGELOG.php</filename>
             <filename>config.xml</filename>
+            <filename>restore.php</filename>
             <filename>version.php</filename>
 
+            <folder>AliceChecks</folder>
             <folder>backup</folder>
             <folder>forms</folder>
             <folder>installers</folder>
@@ -84,21 +87,30 @@
         </languages>
     </administration>
 
+    <api>
+        <files folder="api">
+            <folder>src</folder>
+        </files>
+    </api>
+
     <install>
         <sql>
             <file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+            <file driver="postgresql" charset="utf8">sql/install.postgresql.utf8.sql</file>
         </sql>
     </install>
 
     <uninstall>
         <sql>
             <file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+            <file driver="postgresql" charset="utf8">sql/uninstall.postgresql.utf8.sql</file>
         </sql>
     </uninstall>
 
     <update>
         <schemas>
             <schemapath type="mysql">sql/updates/mysql</schemapath>
+            <schemapath type="postgresql">sql/updates/postgresql</schemapath>
         </schemas>
     </update>
 </extension>

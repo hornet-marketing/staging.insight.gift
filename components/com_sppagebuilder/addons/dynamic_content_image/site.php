@@ -49,6 +49,8 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
         }
 
         $attributeType = $settings->attribute->type ?? 'image';
+        $attributePath = $settings->attribute->path ?? '';
+        $attributeId = $settings->attribute->id ?? '';
 
         $src = CollectionHelper::getDynamicContentData($settings->attribute, $settings->dynamic_item) ?? '';
         if (isset($settings->dynamic_item['collection_id']) && $settings->dynamic_item['collection_id'] === CollectionIds::ARTICLES_COLLECTION_ID) {
@@ -59,12 +61,29 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
         }
 
         $src = trim($src);
+        
+        // Handle image field: parse JSON if present, otherwise treat as old format (just src)
+        $alt = '';
+        if (!empty($src)) {
+            $decoded = json_decode($src, true);
+            if (is_array($decoded) && isset($decoded['src'])) {
+                // New format: JSON with src and alt
+                $alt = isset($decoded['alt']) ? htmlspecialchars($decoded['alt'], ENT_QUOTES, 'UTF-8') : '';
+                $src = $decoded['src'];
+            }
+            // Old format: just a string (src), alt remains empty
+        }
 
         $poster = '';
 
 
-        if($settings->attribute->type === 'gallery'){
+        if($settings->attribute->type === FieldTypes::GALLERY){
             $output = $this->generateGalleryRender($src, $settings, $class);
+            return $output;
+        }
+
+        if($settings->attribute->type === FieldTypes::LOCATION){
+            $output = $this->generateMapRender($src, $settings, $class);
             return $output;
         }
 
@@ -142,6 +161,15 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
         if (strpos($src, 'http') === false) {
             $src = Uri::root(true) . '/' . $src;
             $poster = Uri::root(true) . '/' . $poster;
+        }
+
+        if ($attributeType === FieldTypes::IMAGE && $attributePath === 'profile_image' && $attributeId === -20) {
+            if (empty($src) || $src === '/') {
+                $avatarColor = "#4285F4";
+                $textColor = $this->getTextColor($avatarColor);
+                $initials = $this->getInitials(!empty($settings->dynamic_item['username']) ? $settings->dynamic_item['username'] : '');
+                $src = $this->toDataUrl($avatarColor, $textColor, $initials);
+            }
         }
 
         $output = '<' . $wrapperSelector . ' class="sppb-dynamic-content-image-wrapper ' . $class . '" style="' . $cssVariables . '" ' . $attributes . '>';
@@ -238,7 +266,17 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
 
             if($src && $src !== '/')
             {
-                $output .= '<img src="' . $src . '" alt="Dynamic Content Image" class="sppb-dynamic-content-image" style="object-fit: ' . $imageFit . '; aspect-ratio: ' . $aspectRatio . ';" />';
+                $imgAlt = !empty($alt) ? $alt : 'Dynamic Content Image';
+                $output .= '<img src="' . $src . '" alt="' . $imgAlt . '" class="sppb-dynamic-content-image" style="object-fit: ' . $imageFit . '; aspect-ratio: ' . $aspectRatio . ';" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';" />';
+                if ($attributeType === FieldTypes::IMAGE && $attributePath === 'profile_image' && $attributeId === -20) {
+                    if (strpos($src, 'www.gravatar.com') !== false) {
+                        $avatarColor = "#4285F4";
+                        $textColor = $this->getTextColor($avatarColor);
+                        $initials = $this->getInitials(!empty($settings->dynamic_item['username']) ? $settings->dynamic_item['username'] : '');
+                        $src = $this->toDataUrl($avatarColor, $textColor, $initials);
+                        $output .= '<img src="' . $src . '" alt="' . $imgAlt . '" class="sppb-dynamic-content-image" style="object-fit: ' . $imageFit . '; aspect-ratio: ' . $aspectRatio . ';" onerror="this.style.display=\'none\';" />';
+                    }
+                }
             }
             
         }
@@ -269,20 +307,20 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
         );
 
         $transformCss = $cssHelper->generateTransformStyle(
-            '.sppb-dynamic-content-image-wrapper',
+            '.sppb-dynamic-content-image-wrapper, .sppb-dynamic-content-location-wrapper',
             $settings,
             'transform'
         );
 
         $imageBorderRadius = $cssHelper->generateStyle(
-            '.sppb-dynamic-content-image-wrapper',
+            '.sppb-dynamic-content-image-wrapper, .sppb-dynamic-content-location-wrapper, .sppb-dynamic-content-location-wrapper .sppb-addon-openstreetmap',
             $settings,
             ['radius' => 'border-radius'],
             ['border_radius' => false],
             ['border_radius' => 'spacing']
         );
 
-        $imageBorderStyle = $cssHelper->border('.sppb-dynamic-content-image-wrapper', $settings, 'border');
+        $imageBorderStyle = $cssHelper->border('.sppb-dynamic-content-image-wrapper, .sppb-dynamic-content-location-wrapper', $settings, 'border');
 
         $imageWrapperStyle = $cssHelper->generateStyle(
             '.sppb-dynamic-content-image-wrapper',
@@ -292,7 +330,7 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
         );
 
         $imageMarginPaddingStyle = $cssHelper->generateStyle(
-            '.sppb-dynamic-content-image-wrapper',
+            '.sppb-dynamic-content-image-wrapper, .sppb-dynamic-content-location-wrapper',
             $settings,
             ['margin' => 'margin', 'padding' => 'padding'],
             false
@@ -307,6 +345,13 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
             'width: 100%; height: 100%; object-fit: var(--sppb-dc-image-fit);'
         );
 
+        $locationStyle = $cssHelper->generateStyle(
+            '.sppb-dynamic-content-location-wrapper .sppb-addon-openstreetmap',
+            $settings,
+            ['map_height' => 'height'],
+            'px'
+        );
+
         $css .= $staticStyles;
         $css .= $staticImageStyles;
         $css .= $imageWrapperStyle;
@@ -315,6 +360,7 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
         $css .= $imageEffectStyle;
         $css .= $transformCss;
         $css .= $imageMarginPaddingStyle;
+        $css .= $locationStyle;
 
         if (($this->addon->settings->attribute->type ?? null) === 'gallery') {
 
@@ -336,7 +382,7 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
                 $galleryImageStyle = $cssHelper->generateStyle('.sppb-gallery img', $settings, ['gallery_width' => 'width', 'gallery_height' => 'height', 'gallery_border_radius' => 'border-radius']);
             }
 
-            $galleryStyle = $cssHelper->generateStyle('.sppb-gallery', $settings, ['gallery_item_gap' => 'margin: -%s', 'gallery_item_alignment' => 'justify-content'], ['item_alignment' => false]);
+            $galleryStyle = $cssHelper->generateStyle('.sppb-gallery', $settings, ['gallery_item_gap' => 'margin: -%s', 'item_alignment' => 'justify-content'], ['item_alignment' => false]);
             $galleryItemStyle = $cssHelper->generateStyle('.sppb-gallery li', $settings, ['gallery_item_gap' => 'margin']);
             
             $css .= $galleryStyle;
@@ -391,6 +437,49 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
 		return $output;
 	}
 
+    private function generateMapRender($src, $settings, $class){
+        if(empty($src)){
+            return '';
+        }
+
+        $map_style = (isset($settings->map_style) && $settings->map_style) ? $settings->map_style : 'Wikimedia';
+		$zoom = (isset($settings->map_zoom) && $settings->map_zoom) ? $settings->map_zoom : 0;
+		$mousescroll = (isset($settings->map_mouse_scroll) && $settings->map_mouse_scroll) ? $settings->map_mouse_scroll : 0;
+		$dragging = (isset($settings->map_dragging) && $settings->map_dragging) ? $settings->map_dragging : 0;
+		$zoomcontrol = (isset($settings->map_zoom_control) && $settings->map_zoom_control) ? $settings->map_zoom_control : 0;
+		$attribution = (isset($settings->map_attribution) && $settings->map_attribution) ? $settings->map_attribution : 0;
+
+        $total_location = [];
+        $src = json_decode($src);
+
+        if(is_array($src) && count($src)){
+            foreach($src as $location){
+                $lat = (isset($location->lat) && $location->lat) ? $location->lat : '';
+                $lng = (isset($location->lng) && $location->lng) ? $location->lng : '';
+                $address_text = (isset($location->popupText) && $location->popupText) ? str_replace("'", "&#39;", $location->popupText) : '';
+
+                $total_location[] = [
+                    'address'=>$address_text,
+                    'latitude'=>$lat,
+                    'longitude'=>$lng,
+                    'custom_icon'=>'',
+                ];
+            }
+        }
+
+        $location_json = json_encode($total_location);
+        $output = '';
+
+        if($location_json){
+            $uniqueId = uniqid();
+            $output .= '<div class="sppb-dynamic-content-location-wrapper">';
+            $output .= '<div id="sppb-dynamic-content-location-item-' . $this->addon->id . '-' . $uniqueId .'" class="sppb-addon-openstreetmap '.$class.'" data-location=\''.$location_json.'\' data-mapstyle="' . $map_style . '" data-mapzoom="'. $zoom .'" data-mousescroll="'. $mousescroll .'" data-dragging="'. $dragging .'" data-zoomcontrol="'. $zoomcontrol .'" data-attribution="'. $attribution .'"></div>';
+            $output .= '</div>';
+        }
+
+        return $output;
+    }
+
 
     private function generateGalleryRender($src, $settings, $class){
         $listIndex = !empty($this->addon->listIndex) ? $this->addon->listIndex : 0;
@@ -414,6 +503,7 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
 			{
 				
 				$thumb_src = isset($value->src) ? $value->src : '';
+                $alt = isset($value->alt) ? htmlspecialchars($value->alt, ENT_QUOTES, 'UTF-8') : '';
 
 				if (!is_string($thumb_src)) {
 					$thumb_src = '';
@@ -432,7 +522,7 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
 
 					$output .= '<li>';
 					$output .= ($thumb_src) ? '<a href="' . $thumb_src . '" class="sppb-gallery-btn">' : '';
-					$output .= '<img class="sppb-img-responsive" src="'. $thumb_src . '" data-large="' . $thumb_src . '"loading="lazy" style="object-fit: cover;" />';
+					$output .= '<img class="sppb-img-responsive" alt="' . $alt . '" src="'. $thumb_src . '" data-large="' . $thumb_src . '"loading="lazy" style="object-fit: cover;" />';
 					$output .= ($thumb_src) ? '</a>' : '';
 					$output .= '</li>';
 				}
@@ -474,10 +564,62 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
 		return $output;
     }
 
+    private function getInitials($name) {
+		$words = explode(' ', trim($name));
+		$initials = '';
+		if (count($words) > 1) {
+			$initials .= strtoupper(substr($words[0], 0, 1));
+			$initials .= strtoupper(substr(end($words), 0, 1));
+		} else {
+			$initials .= strtoupper(substr($name, 0, 1));
+		}
+		return $initials;
+	}
+
+	private function getTextColor($color) {
+		$r = hexdec(substr($color, 1, 2));
+		$g = hexdec(substr($color, 3, 2));
+		$b = hexdec(substr($color, 5, 2));
+
+		$brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+
+		return ($brightness > 128) ? '#000000' : '#FFFFFF';
+	}
+
+    private function toDataUrl(string $avatarColor, string $textColor, string $initials, int $size = 45): string
+    {
+        $avatarColor = trim($avatarColor);
+        $textColor   = trim($textColor);
+        $initialsEsc = htmlspecialchars(strtoupper($initials), ENT_QUOTES, 'UTF-8');
+    
+        $fontSize = (int) round($size * 0.44);
+    
+        $svg = '
+    <svg xmlns="http://www.w3.org/2000/svg" width="' . $size . '" height="' . $size . '" viewBox="0 0 ' . $size . ' ' . $size . '" role="img" aria-label="avatar">
+      <circle cx="' . $size / 2 . '" cy="' . $size / 2 . '" r="' . $size / 2 . '" fill="' . $avatarColor . '" />
+      <text x="50%" y="55%"
+            fill="' . $textColor . '"
+            font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
+            font-size="' . $fontSize . '"
+            font-weight="600"
+            text-anchor="middle"
+            dominant-baseline="middle">
+        ' . $initialsEsc . '
+      </text>
+    </svg>
+    ';
+    
+        return 'data:image/svg+xml;base64,' . base64_encode($svg);
+    }    
+
     public function stylesheets()
 	{
         if (isset($this->addon->settings->attribute) && $this->addon->settings->attribute->type === 'gallery') {
             return array(Uri::base(true) . '/components/com_sppagebuilder/assets/css/magnific-popup.css', Uri::base(true) . '/components/com_sppagebuilder/assets/css/jquery.bxslider.min.css');
+        }
+
+        if(isset($this->addon->settings->attribute) && $this->addon->settings->attribute->type === 'location') {
+            return [Uri::base(true) . '/components/com_sppagebuilder/assets/css/leaflet.css'];
         }
 		
 	}
@@ -485,10 +627,21 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
     public function scripts()
 	{
         if (isset($this->addon->settings->attribute) && $this->addon->settings->attribute->type === 'gallery') {
-            HTMLHelper::_('script', 'components/com_sppagebuilder/assets/js/jquery.bxslider.min.js', [], ['defer' => true]);
-            HTMLHelper::_('script', 'components/com_sppagebuilder/assets/js/jquery.magnific-popup.min.js', []);
+            return [
+                HTMLHelper::_('script', 'components/com_sppagebuilder/assets/js/jquery.bxslider.min.js', [], ['defer' => true]),
+                HTMLHelper::_('script', 'components/com_sppagebuilder/assets/js/jquery.magnific-popup.min.js', []),
+                HTMLHelper::_('script', 'components/com_sppagebuilder/assets/js/addons/dc-gallery-bxslider.js', [], ['defer' => true]),
+            ];
         }
-        HTMLHelper::_('script', 'components/com_sppagebuilder/assets/js/addons/dc-gallery-bxslider.js', [], ['defer' => true]);
+
+        if(isset($this->addon->settings->attribute) && $this->addon->settings->attribute->type === 'location') {
+            return [
+                HTMLHelper::_('script', 'components/com_sppagebuilder/assets/js/leaflet.js', [], ['defer' => true]),
+                HTMLHelper::_('script', 'components/com_sppagebuilder/assets/js/leaflet.provider.js', [], ['defer' => true])
+            ];
+        }
+
+        return [HTMLHelper::_('script', 'components/com_sppagebuilder/assets/js/addons/dc-gallery-bxslider.js', [], ['defer' => true])];
 	}
 
     public function js()
@@ -503,7 +656,7 @@ class SppagebuilderAddonDynamic_content_image extends SppagebuilderAddons
             $addon_id = '#sppb-addon-' . $this->addon->id;
             $js = 'jQuery(function($){
                     function initMagnificPopup() {
-                        $("' . $addon_id . ' ul li").magnificPopup({
+                        $("' . $addon_id . ' ul li:not(.bx-clone)").magnificPopup({
                             delegate: "a",
                             type: "image",
                             mainClass: "mfp-no-margins mfp-with-zoom",

@@ -274,13 +274,6 @@
       "version": "08e025"
     },
     {
-      "name": "core",
-      "type": "script",
-      "class": "CoreAssetItem",
-      "uri": "system/core.min.js",
-      "version": "2cb912"
-    },
-    {
       "name": "messages",
       "type": "script",
       "uri": "system/messages.min.js",
@@ -317,18 +310,6 @@
       "version": "b135d0"
     },
     {
-      "name": "showon",
-      "type": "script",
-      "dependencies": [
-        "core"
-      ],
-      "uri": "system/showon.min.js",
-      "attributes": {
-        "type": "module"
-      },
-      "version": "e51227"
-    },
-    {
       "name": "searchtools",
       "type": "script",
       "dependencies": [
@@ -358,19 +339,32 @@
         "defer": true,
         "type": "module"
       },
-      "version": "4bcb00"
+      "version": "a8f254"
     },
     {
-      "name": "joomla.draggable",
+      "name": "form.validate",
       "type": "script",
-      "uri": "system/draggable.min.js",
+      "class": "FormValidateAssetItem",
       "attributes": {
-        "defer": true
+        "type": "module"
       },
       "dependencies": [
-        "dragula"
+        "core"
       ],
-      "version": "ffd540"
+      "uri": "system/fields/validate.min.js",
+      "version": "75ac5d"
+    },
+    {
+      "name": "showon",
+      "type": "script",
+      "dependencies": [
+        "core"
+      ],
+      "uri": "system/showon.min.js",
+      "attributes": {
+        "type": "module"
+      },
+      "version": "e51227"
     },
     {
       "name": "field.color-adv",
@@ -385,31 +379,6 @@
       "version": "4c7560"
     },
     {
-      "name": "form.validate",
-      "type": "script",
-      "class": "FormValidateAssetItem",
-      "attributes": {
-        "type": "module"
-      },
-      "dependencies": [
-        "core"
-      ],
-      "uri": "system/fields/validate.min.js",
-      "version": "8dcde2"
-    },
-    {
-      "name": "highlight",
-      "type": "script",
-      "uri": "system/highlight.min.js",
-      "attributes": {
-        "type": "module"
-      },
-      "dependencies": [
-        "highlight-legacy"
-      ],
-      "version": "0013a1"
-    },
-    {
       "name": "field.passwordview",
       "type": "script",
       "uri": "system/fields/passwordview.min.js",
@@ -420,6 +389,32 @@
         "core"
       ],
       "version": "61f142"
+    },
+    {
+      "name": "field.passwordstrength",
+      "type": "script",
+      "uri": "system/fields/passwordstrength.min.js",
+      "attributes": {
+        "defer": true
+      },
+      "dependencies": [
+        "core",
+        "form.validate"
+      ],
+      "version": "868594"
+    },
+    {
+      "name": "core",
+      "type": "script",
+      "class": "CoreAssetItem",
+      "uri": "system/core.min.js",
+      "version": "a3d8f8"
+    },
+    {
+      "name": "field.calendar",
+      "type": "style",
+      "uri": "system/fields/calendar.css",
+      "version": "5da368"
     },
     {
       "name": "field.calendar-rtl",
@@ -437,26 +432,7 @@
       "dependencies": [
         "field.calendar.helper"
       ],
-      "version": "732cb2"
-    },
-    {
-      "name": "field.calendar",
-      "type": "style",
-      "uri": "system/fields/calendar.css",
-      "version": "5da368"
-    },
-    {
-      "name": "field.passwordstrength",
-      "type": "script",
-      "uri": "system/fields/passwordstrength.min.js",
-      "attributes": {
-        "defer": true
-      },
-      "dependencies": [
-        "core",
-        "form.validate"
-      ],
-      "version": "868594"
+      "version": "b3233a"
     },
     {
       "name": "field.color-slider",
@@ -466,20 +442,6 @@
         "defer": true
       },
       "version": "01c1ec"
-    },
-    {
-      "name": "field.modal-fields",
-      "type": "script",
-      "uri": "system/fields/modal-fields.min.js",
-      "dependencies": [
-        "core"
-      ],
-      "attributes": {
-        "defer": true
-      },
-      "deprecated": true,
-      "deprecatedMsg": "Use [modal-content-select-field] asset instead. To be removed in Joomla 6.",
-      "version": "21a476"
     },
     {
       "name": "webcomponent.field-fancy-select",
@@ -502,12 +464,6 @@
     },
     {
       "name": "webcomponent.media-select",
-      "type": "style",
-      "uri": "system/fields/joomla-media-select.min.css",
-      "version": "08a456"
-    },
-    {
-      "name": "webcomponent.media-select",
       "type": "script",
       "uri": "system/fields/joomla-media-select.min.js",
       "attributes": {
@@ -520,16 +476,24 @@
       "version": "e758a0"
     },
     {
-      "name": "webcomponent.field-media",
+      "name": "webcomponent.media-select",
+      "type": "style",
+      "uri": "system/fields/joomla-media-select.min.css",
+      "version": "08a456"
+    },
+    {
+      "name": "field.modal-fields",
       "type": "script",
-      "uri": "system/fields/joomla-field-media.min.js",
-      "attributes": {
-        "type": "module"
-      },
+      "uri": "system/fields/modal-fields.min.js",
       "dependencies": [
-        "webcomponent.field-media-legacy"
+        "core"
       ],
-      "version": "03e20d"
+      "attributes": {
+        "defer": true
+      },
+      "deprecated": true,
+      "deprecatedMsg": "Use [modal-content-select-field] asset instead. To be removed in Joomla 6.",
+      "version": "21a476"
     },
     {
       "name": "webcomponent.field-module-order",
@@ -548,6 +512,18 @@
       "type": "style",
       "uri": "system/fields/joomla-field-permissions.min.css",
       "version": "e39396"
+    },
+    {
+      "name": "webcomponent.field-media",
+      "type": "script",
+      "uri": "system/fields/joomla-field-media.min.js",
+      "attributes": {
+        "type": "module"
+      },
+      "dependencies": [
+        "webcomponent.field-media-legacy"
+      ],
+      "version": "03e20d"
     },
     {
       "name": "webcomponent.field-permissions",
@@ -641,6 +617,17 @@
       "version": "80d9c7"
     },
     {
+      "name": "joomla.dialog",
+      "type": "script",
+      "uri": "system/joomla-dialog.min.js",
+      "importmap": true,
+      "dependencies": [
+        "wcpolyfill",
+        "core"
+      ],
+      "version": "28819e"
+    },
+    {
       "name": "webcomponent.toolbar-button",
       "type": "script",
       "uri": "system/joomla-toolbar-button.min.js",
@@ -654,27 +641,16 @@
       "version": "623aee"
     },
     {
-      "name": "joomla.dialog",
+      "name": "joomla.dialog-autocreate",
       "type": "script",
-      "uri": "system/joomla-dialog.min.js",
-      "importmap": true,
-      "dependencies": [
-        "wcpolyfill",
-        "core"
-      ],
-      "version": "28819e"
-    },
-    {
-      "type": "script",
-      "name": "modal-content-select",
-      "dependencies": [
-        "core"
-      ],
-      "uri": "system/modal-content-select.min.js",
+      "uri": "system/joomla-dialog-autocreate.min.js",
       "attributes": {
         "type": "module"
       },
-      "version": "feb637"
+      "dependencies": [
+        "joomla.dialog"
+      ],
+      "version": "44fd47"
     },
     {
       "name": "list-view",
@@ -687,6 +663,18 @@
         "core"
       ],
       "version": "bb814f"
+    },
+    {
+      "type": "script",
+      "name": "modal-content-select",
+      "dependencies": [
+        "core"
+      ],
+      "uri": "system/modal-content-select.min.js",
+      "attributes": {
+        "type": "module"
+      },
+      "version": "feb637"
     },
     {
       "type": "script",
@@ -711,16 +699,28 @@
       "version": "c1bf6e"
     },
     {
-      "name": "joomla.dialog-autocreate",
+      "name": "highlight",
       "type": "script",
-      "uri": "system/joomla-dialog-autocreate.min.js",
+      "uri": "system/highlight.min.js",
       "attributes": {
         "type": "module"
       },
       "dependencies": [
-        "joomla.dialog"
+        "highlight-legacy"
       ],
-      "version": "44fd47"
+      "version": "0013a1"
+    },
+    {
+      "name": "joomla.draggable",
+      "type": "script",
+      "uri": "system/draggable.min.js",
+      "attributes": {
+        "defer": true
+      },
+      "dependencies": [
+        "dragula"
+      ],
+      "version": "ffd540"
     }
   ]
 }

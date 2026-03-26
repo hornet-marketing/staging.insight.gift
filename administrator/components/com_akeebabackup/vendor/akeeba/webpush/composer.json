@@ -14,11 +14,11 @@
   ],
   "config": {
     "platform": {
-      "php": "7.2.999"
+      "php": "7.4.999"
     }
   },
   "require": {
-    "php": "^7.2|^8.0",
+    "php": "^7.4|^8.0",
     "ext-openssl": "*",
     "ext-json": "*"
   },

@@ -93,6 +93,10 @@ class SppagebuilderAddonClients extends SppagebuilderAddons
 			{
 				foreach ($settings->sp_clients_item as $item_key => $carousel_item)
 				{
+					if(isset($carousel_item->item_visibility) && !$carousel_item->item_visibility) {
+						continue;
+					}
+
 					$carousel_img = (isset($carousel_item->image) && $carousel_item->image) ? $carousel_item->image : '';
 					$carousel_img_src = isset($carousel_img->src) ? $carousel_img->src : $carousel_img;
 					$title = (isset($carousel_item->title) && $carousel_item->title) ? $carousel_item->title : '';
@@ -104,7 +108,7 @@ class SppagebuilderAddonClients extends SppagebuilderAddons
 
 					if (isset($url) && $url) $output .= '<a ' . (isset($url_same_window) && $url_same_window ? $url_same_window : '') . ' rel="nofollow" href="' . $url . '">';
 
-					$output .= '<img class="sppb-img-responsive sppb-addon-clients-image" src="' . $carousel_img_src . '" alt="' . ($alt_text) . '" loading="lazy">';
+					$output .= '<img class="sppb-img-responsive sppb-addon-clients-image" src="' . $carousel_img_src . '" alt="' . ($alt_text) . '">';
 
 					if (isset($url) && $url) $output .= '</a>';
 
@@ -119,6 +123,10 @@ class SppagebuilderAddonClients extends SppagebuilderAddons
 
 			foreach ($settings->sp_clients_item as $key => $value)
 			{
+				if (isset($value->item_visibility) && !$value->item_visibility) {
+					continue;
+				}
+
 				$client_img = (isset($value->image) && $value->image) ? $value->image : '';
 				$client_img_src = isset($client_img->src) ? $client_img->src : $client_img;
 				$title = (isset($value->title) && $value->title) ? $value->title : '';
@@ -359,6 +367,9 @@ class SppagebuilderAddonClients extends SppagebuilderAddons
 			<# if(data.create_carousel) {
 				if(typeof data.sp_clients_item !== "undefined" && _.isArray(data.sp_clients_item)){
 					_.each(data.sp_clients_item, function(carousel_item){
+						if(typeof carousel_item.item_visibility !== "undefined" && !carousel_item.item_visibility){
+							return;
+						}
 						var carouselImg = {}
 						if (typeof carousel_item.image !== "undefined" && typeof carousel_item.image.src !== "undefined") {
 							carouselImg = carousel_item.image
@@ -407,6 +418,9 @@ class SppagebuilderAddonClients extends SppagebuilderAddons
 			<div class="sppb-addon-content">
 				<div class="sppb-row">
 					<# _.each(data.sp_clients_item, function(clients_item, key){
+						if(typeof clients_item.item_visibility !== "undefined" && !clients_item.item_visibility){
+							return;
+						}
 						var clientImg = {}
 						if (typeof clients_item.image !== "undefined" && typeof clients_item.image.src !== "undefined") {
 							clientImg = clients_item.image

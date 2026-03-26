@@ -3,7 +3,7 @@
  * Akeeba Engine
  *
  * @package   akeebaengine
- * @copyright Copyright (c)2006-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @copyright Copyright (c)2006-2026 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License version 3, or later
  *
  * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
@@ -238,10 +238,10 @@ abstract class Base implements PlatformInterface
 	/**
 	 * Return the total number of statistics records
 	 *
-	 * @param   array  $filters  An array of filters to apply to the results. Alternatively you can just pass a profile
-	 *                           ID to filter by that profile.
+	 * @param   array  $filters  An array of filters to apply to the results. Alternatively, you can just pass a
+	 *                           profile ID to filter by that profile.
 	 *
-	 * @return int
+	 * @return  int
 	 */
 	function get_statistics_count($filters = null)
 	{
@@ -253,34 +253,40 @@ abstract class Base implements PlatformInterface
 		{
 			if (is_array($filters))
 			{
-				if (!empty($filters))
+				// Parse the filters array
+				foreach ($filters as $f)
 				{
-					// Parse the filters array
-					foreach ($filters as $f)
+					$clause  = $db->quoteName($f['field']);
+					$operand = strtoupper($f['operand'] ?? '=');
+
+					switch ($operand)
 					{
-						$clause = $db->quoteName($f['field']);
-						if (array_key_exists('operand', $f))
-						{
-							$clause .= ' ' . strtoupper($f['operand']) . ' ';
-						}
-						else
-						{
-							$clause .= ' = ';
-						}
-						if ($f['operand'] == 'BETWEEN')
-						{
-							$clause .= $db->q($f['value']) . ' AND ' . $db->q($f['value2']);
-						}
-						elseif ($f['operand'] == 'LIKE')
-						{
-							$clause .= '\'%' . $db->escape($f['value']) . '%\'';
-						}
-						else
-						{
-							$clause .= $db->q($f['value']);
-						}
-						$query->where($clause);
+						case 'BETWEEN':
+						case 'NOT BETWEEN':
+							$clause .= $operand . ' ' . $db->q($f['value']) . ' AND ' . $db->q($f['value2']);
+							break;
+
+						case 'LIKE':
+						case 'NOT LIKE':
+							$clause .= $operand . ' ' . '\'%' . $db->escape($f['value']) . '%\'';
+							break;
+
+						case 'IN':
+						case 'NOT IN':
+							$clause .= ' ' . $operand . ' (' . implode(', ', array_map([$db, 'quote'], array_filter($f['value']))) . ')';
+							break;
+
+						case 'EMPTY':
+							$field = $db->quoteName($f['field']);
+							$empty = $db->quote('');
+							$clause = "($field IS NULL OR $field = $empty)";
+
+						default:
+							$clause .= $operand . ' ' . $db->q($f['value']);
+							break;
 					}
+
+					$query->where($clause);
 				}
 			}
 			else

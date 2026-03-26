@@ -530,6 +530,20 @@ $addon_global_settings = [
 					'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_WIDTH'),
 					'max' => 100,
 					'responsive' => true,
+					'unit' => true,
+					'fallback_unit' => '%',
+					'depends' => [
+						['use_global_width', '=', 1]
+					],
+				],
+
+				'global_max_width' => [
+					'type' => 'slider',
+					'title' => Text::_('COM_SPPAGEBUILDER_GLOBAL_MAX_WIDTH'),
+					'max' => 2000,
+					'unit' => true,
+					'responsive' => true,
+					'fallback_unit' => 'px',
 					'depends' => [
 						['use_global_width', '=', 1]
 					],
