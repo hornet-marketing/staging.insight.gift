@@ -25,3 +25,6 @@ administrator/components/com_akeebabackup/backup/
 
 # Medien (nur auf Server)
 images/
+
+# Screenshots
+screenshots/

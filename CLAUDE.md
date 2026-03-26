@@ -94,5 +94,11 @@ When making site changes, work in:
 - Custom component or module directories under `components/` / `modules/`
 
 Avoid modifying files under `libraries/` or core `includes/` — these are Joomla framework files that will be overwritten on updates.
+
 # Git Workflow Test
+
 # Test
+## Browser-Testing Screenshots
+- Screenshots IMMER in /Users/manuelhorne/HorNet.Marketing/Web-Projekte/staging.insight.gift/screenshots/ speichern
+- NIEMALS in /tmp/ – dieser Ordner wird bei Neustart geleert
+- Dateiname immer mit Datum und Beschreibung: YYYY-MM-DD_beschreibung.png
